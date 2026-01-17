@@ -1,0 +1,15 @@
+FROM golang:1.24-alpine
+
+# Install Air for hot reloading
+RUN go install github.com/air-verse/air@v1.61.7
+
+WORKDIR /app
+
+# Copy dependency files
+COPY go.mod go.sum ./
+RUN go mod download
+
+# We don't COPY . . here because we will use Docker Volumes 
+# to sync the code from your Fedora machine to the container.
+
+CMD ["air", "-c", ".air.toml"]

@@ -1,0 +1,101 @@
+version: "3.8"
+
+services:
+  # --- API GATEWAY ---
+  gateway:
+    image: nginx:alpine
+    container_name: api-gateway
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - user-service
+      - product-service
+    networks:
+      - app-network
+  # --- USER SERVICE ---
+  user-db:
+    image: postgres:15-alpine
+    container_name: user-db
+    environment:
+      POSTGRES_USER: reno
+      POSTGRES_PASSWORD: secretpassword
+      POSTGRES_DB: user_db
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U reno -d user_db"]
+      interval: 5s
+      timeout: 5s
+    ports:
+      - "5432:5432"
+    volumes:
+      - user_postgres_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+
+  user-service:
+    build:
+      context: ./user-service
+      dockerfile: Dockerfile.dev
+    container_name: user-service
+    volumes:
+      - ./user-service:/app
+    environment:
+      DB_HOST: user-db
+      DB_PORT: 5432
+      DB_USER: reno
+      DB_PASSWORD: secretpassword
+      DB_NAME: user_db
+      JWT_SECRET: secret key
+    depends_on:
+      user-db:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  # --- PRODUCT SERVICE ---
+  product-db:
+    image: postgres:15-alpine
+    container_name: product-db
+    environment:
+      POSTGRES_USER: reno
+      POSTGRES_PASSWORD: secretpassword
+      POSTGRES_DB: product_db
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U reno -d product_db"]
+      interval: 5s
+      timeout: 5s
+    ports:
+      - "5433:5432"
+    volumes:
+      - product_postgres_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+
+  product-service:
+    build:
+      context: ./product-service
+      dockerfile: Dockerfile.dev
+    container_name: product-service
+    volumes:
+      - ./product-service:/app
+    environment:
+      DB_HOST: product-db
+      DB_PORT: 5432
+      DB_USER: reno
+      DB_PASSWORD: secretpassword
+      DB_NAME: product_db
+      JWT_SECRET: secret key
+    depends_on:
+      product-db:
+        condition: service_healthy
+    networks:
+      - app-network
+
+volumes:
+  user_postgres_data:
+  product_postgres_data:
+
+networks:
+  app-network:
+    driver: bridge

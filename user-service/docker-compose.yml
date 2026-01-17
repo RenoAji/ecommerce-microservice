@@ -1,0 +1,43 @@
+version: "3.8"
+
+services:
+  # The PostgreSQL Database
+  user-db:
+    image: postgres:15-alpine
+    container_name: user-db
+    environment:
+      POSTGRES_USER: reno
+      POSTGRES_PASSWORD: secretpassword
+      POSTGRES_DB: user_db
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U reno -d user_db"]
+      interval: 5s
+      timeout: 5s
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # Your Go Application
+  user-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: user-service
+    ports:
+      - "8081:8081"
+    volumes:
+      - .:/app # This maps your local folder to the container's /app
+    environment:
+      # Use the service name 'user-db' as the hostname
+      DB_HOST: user-db
+      DB_PORT: 5432
+      DB_USER: reno
+      DB_PASSWORD: secretpassword
+      DB_NAME: user_db
+    depends_on:
+      user-db:
+        condition: service_healthy # Wait for the healthcheck to pass!
+
+volumes:
+  postgres_data:
