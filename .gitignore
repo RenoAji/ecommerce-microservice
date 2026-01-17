@@ -1,0 +1,30 @@
+# Binary executables
+bin/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Dependency directories
+vendor/
+
+# Environment variables (CRITICAL: Never commit these!)
+.env
+*.env
+env.local
+
+# Docker
+.docker/
+# Optional: Ignore the local DB data if you mount it to a volume
+pgdata/
+
+# IDE specific files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS specific files
+.DS_Store
+Thumbs.db
