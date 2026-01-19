@@ -1,0 +1,22 @@
+version: "3.8"
+
+services:
+  user-service:
+    build:
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./user-service:/app
+
+  product-service:
+    build:
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./product-service:/app
+
+  user-db:
+    ports:
+      - "${USER_DB_PORT:-5432}:5432"
+
+  product-db:
+    ports:
+      - "${PRODUCT_DB_PORT:-5433}:5432"

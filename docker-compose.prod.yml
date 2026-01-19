@@ -1,0 +1,27 @@
+version: "3.8"
+
+services:
+  # --- API GATEWAY ---
+  gateway:
+    restart: always
+
+  # --- USER SERVICE ---
+  user-service:
+    build:
+      dockerfile: Dockerfile # Points to the optimized Multi-stage Dockerfile
+    restart: always
+
+  user-db:
+    ports: []
+    restart: always
+
+  # --- PRODUCT SERVICE ---
+  product-service:
+    build:
+      dockerfile: Dockerfile
+    restart: always
+    # No local volumes for production
+
+  product-db:
+    ports: []
+    restart: always

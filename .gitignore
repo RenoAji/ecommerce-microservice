@@ -28,3 +28,7 @@ pgdata/
 # OS specific files
 .DS_Store
 Thumbs.db
+
+# tmp
+tmp/
+**/tmp/

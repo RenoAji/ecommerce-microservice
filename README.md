@@ -32,11 +32,37 @@ USER_DB_PORT=5432
 PRODUCT_DB_PORT=5433
 ```
 
-### 3. Run with docker
+### 3. Run with Docker
+
+#### Development Mode
+
+For active development with hot-reload and database port access:
 
 ```bash
-docker compose up --build
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
 ```
+
+**Development Features:**
+
+- 🔄 **Auto-restart on code changes** (volumes mounted)
+- 🔌 **Database ports mapped** to host:
+  - User DB: `localhost:5432`
+  - Product DB: `localhost:5433`
+- 📦 **Larger images** (includes dev tools)
+
+#### Production Mode
+
+For optimized container:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build
+```
+
+**Production Features:**
+
+- 📦 **Smaller container images** (multi-stage builds)
+- 🔒 **Database ports not exposed** (internal network only)
+- 🚀 **No auto-restart** (code changes require rebuild)
 
 ## 📡 API Endpoints
 
