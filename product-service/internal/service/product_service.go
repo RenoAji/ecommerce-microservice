@@ -21,15 +21,9 @@ func (s *ProductService) CreateCategory(category *domain.Category) error {
 	return s.productRepo.CreateCategory(category)
 }
 
-type PaginatedProducts struct {
-	Products    []domain.ProductResponse `json:"products"`
-	Total       int64                    `json:"total"`
-	Page        int                      `json:"page"`
-	Limit       int                      `json:"limit"`
-	TotalPages  int                      `json:"total_pages"`
-}
 
-func (s *ProductService) GetProducts(search, categoryID, minPrice, maxPrice, order, sortBy string, page, limit int) (*PaginatedProducts, error) {
+
+func (s *ProductService) GetProducts(search, categoryID, minPrice, maxPrice, order, sortBy string, page, limit int) (*domain.PaginatedProducts, error) {
 	// Set default values
 	if page < 1 {
 		page = 1
@@ -60,7 +54,7 @@ func (s *ProductService) GetProducts(search, categoryID, minPrice, maxPrice, ord
         productsResponse[i] = domain.ToProductResponse(p)
     }
 
-	return &PaginatedProducts{
+	return &domain.PaginatedProducts{
 		Products:   productsResponse,
 		Total:      total,
 		Page:       page,

@@ -14,8 +14,31 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+
+	_ "user-service/docs" // Import generated docs (use your go.mod name)
+
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
+// @title User Service API
+// @version 1.0
+// @description This is the authentication and user management service for the e-commerce platform.
+// @termsOfService http://swagger.io/terms/
+
+// @contact.name Septareno Nugroho Aji
+// @contact.email renoaji25sep@gmail.com
+
+// @license.name MIT
+// @license.url https://opensource.org/licenses/MIT
+
+// @host localhost:8081
+// @BasePath /api/v1
+
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Type "Bearer" followed by a space and JWT token.
 func main() {
 	// Get database settings from environment variables (provided by docker-compose)
 	host := os.Getenv("DB_HOST")
@@ -85,6 +108,9 @@ func main() {
 		auth.POST("/logout", authMiddleware.LogoutHandler)
 	}
 	auth.POST("/refresh", authMiddleware.RefreshHandler)
+
+	// Swagger Documentation Route
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	// Start Server
 	log.Println("User Service starting on port 8081...")

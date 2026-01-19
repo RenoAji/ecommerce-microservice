@@ -11,6 +11,26 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// LoginRequest represents the login payload
+type LoginRequest struct {
+	Email    string `json:"email" binding:"required" example:"john@example.com"`
+	Password string `json:"password" binding:"required" example:"password123"`
+}
+
+// LoginResponse represents the login response
+type LoginResponse struct {
+	AccessToken  string `json:"access_token" example:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."`
+	ExpiresIn    int    `json:"expires_in" example:"3600"`
+	RefreshToken string `json:"refresh_token" example:"1XhvR1bCnUq1UquqTbikKP6vz36-_Ht7dvkSd7P8NTA="`
+	TokenType    string `json:"token_type" example:"Bearer"`
+}
+
+// ErrorResponse represents an error response
+type ErrorResponse struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+}
+
 func NewAuthMiddleware(repo repository.UserRepository, secretKey string) (*jwt.GinJWTMiddleware, error) {
 	// the jwt middleware
 	authMiddleware := &jwt.GinJWTMiddleware{

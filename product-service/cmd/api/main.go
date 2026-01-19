@@ -13,10 +13,32 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+
+	_ "product-service/docs"
 )
 
+// @title Product Service API
+// @version 1.0
+// @description This is the product catalog and inventory management service for the e-commerce platform.
+// @termsOfService http://swagger.io/terms/
+
+// @contact.name Septareno Nugroho Aji
+// @contact.email renoaji25sep@gmail.com
+
+// @license.name MIT
+// @license.url https://opensource.org/licenses/MIT
+
+// @host localhost:8082
+// @BasePath /api/v1
+
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Type "Bearer" followed by a space and JWT token.
 func main() {
 	// Get database settings from environment variables (provided by docker-compose)
 	host := os.Getenv("DB_HOST")
@@ -71,6 +93,9 @@ func main() {
 		api.GET("/products", ProductHandler.Get)
 		api.GET("/products/:id", ProductHandler.GetByID)
 	}
+
+	// Swagger Documentation Route
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	// Start Server
 	log.Println("Product Service starting on port 8081...")

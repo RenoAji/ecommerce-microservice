@@ -95,6 +95,18 @@ After first run, a default admin account is created:
 - **Password:** `admin123`
 - **Role:** `admin`
 
-### API DOC
+⚠️ **Change the admin password immediately in production!**
 
-https://app.swaggerhub.com/apis-docs/RENOAJI25SEP/Ecommerce_Microservice/1.0.0
+## 📚 API Documentation
+
+Interactive API documentation is available via Swagger UI:
+
+- **User Service**: http://localhost:8080/user-docs/index.html
+- **Product Service**: http://localhost:8080/product-docs/index.html
+
+The Swagger UI provides:
+
+- Interactive API testing
+- Request/response schemas
+- Authentication support (use "Authorize" button to add JWT token)
+- Complete endpoint documentation with examples
