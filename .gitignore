@@ -32,3 +32,7 @@ Thumbs.db
 # tmp
 tmp/
 **/tmp/
+
+# Generated protobuf code
+**/pb/*.go
+pb/

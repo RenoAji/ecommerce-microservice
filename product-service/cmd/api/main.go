@@ -3,11 +3,13 @@ package main
 import (
 	"fmt"
 	"log"
+	"net"
 	"os"
 	"product-service/internal/domain"
 	"product-service/internal/handler"
 	"product-service/internal/middleware"
 	"product-service/internal/repository"
+	"product-service/pb"
 
 	"product-service/internal/service"
 	"time"
@@ -15,6 +17,7 @@ import (
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
+	"google.golang.org/grpc"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 
@@ -97,7 +100,24 @@ func main() {
 	// Swagger Documentation Route
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
-	// Start Server
+	// Start gRPC Server in a goroutine
+	go func() {
+		lis, err := net.Listen("tcp", ":50051")
+		if err != nil {
+			log.Fatalf("Failed to listen on port 50051: %v", err)
+		}
+		
+		grpcServer := grpc.NewServer(grpc.UnaryInterceptor(middleware.InternalAuthInterceptor))
+		grpcHandler := handler.NewProductGRPCServer(svc)
+		pb.RegisterProductServiceServer(grpcServer, grpcHandler)
+		
+		log.Println("gRPC server starting on port 50051...")
+		if err := grpcServer.Serve(lis); err != nil {
+			log.Fatalf("Failed to serve gRPC: %v", err)
+		}
+	}()
+
+	// Start HTTP Server
 	log.Println("Product Service starting on port 8081...")
 	if err := r.Run(":8081"); err != nil {
 		log.Fatal("Failed to start server: ", err)

@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package product;
+option go_package = "./pb";
+
+// The request message containing the product ID
+message GetProductRequest {
+  string id = 1;
+}
+
+// The response message containing product details
+message ProductResponse {
+  uint32 id = 1;
+  string name = 2;
+  int64 price = 3;
+}
+
+// Service definition
+service ProductService {
+  rpc GetProduct(GetProductRequest) returns (ProductResponse);
+}

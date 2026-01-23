@@ -1,0 +1,233 @@
+basePath: /api/v1
+definitions:
+  cart-service_internal_domain.AddCartItemRequest:
+    properties:
+      product_id:
+        type: string
+      quantity:
+        minimum: 1
+        type: integer
+    required:
+    - product_id
+    - quantity
+    type: object
+  cart-service_internal_domain.Cart:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/cart-service_internal_domain.CartItem'
+        type: array
+      total_amt:
+        type: integer
+      total_qty:
+        type: integer
+      user_id:
+        type: string
+    type: object
+  cart-service_internal_domain.CartItem:
+    properties:
+      price:
+        type: integer
+      product_id:
+        type: string
+      quantity:
+        type: integer
+    type: object
+  cart-service_internal_domain.ErrorResponse:
+    properties:
+      error:
+        type: string
+    type: object
+  cart-service_internal_domain.SuccessResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  cart-service_internal_domain.UpdateCartItemRequest:
+    properties:
+      quantity:
+        minimum: 1
+        type: integer
+    required:
+    - quantity
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: septareno@example.com
+    name: Septareno Nugroho Aji
+  description: This is the cart management service for the e-commerce platform.
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  termsOfService: http://swagger.io/terms/
+  title: Cart Service API
+  version: "1.0"
+paths:
+  /cart:
+    delete:
+      consumes:
+      - application/json
+      description: Remove all items from the user's cart
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Cart cleared successfully
+          schema:
+            $ref: '#/definitions/cart-service_internal_domain.SuccessResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/cart-service_internal_domain.ErrorResponse'
+        "500":
+          description: Failed to clear cart
+          schema:
+            $ref: '#/definitions/cart-service_internal_domain.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Clear cart
+      tags:
+      - Cart
+    get:
+      consumes:
+      - application/json
+      description: Retrieve the current user's shopping cart with all items
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/cart-service_internal_domain.Cart'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/cart-service_internal_domain.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/cart-service_internal_domain.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get user's cart
+      tags:
+      - Cart
+  /cart/item:
+    post:
+      consumes:
+      - application/json
+      description: Add a product item to the user's shopping cart
+      parameters:
+      - description: Cart item to add
+        in: body
+        name: item
+        required: true
+        schema:
+          $ref: '#/definitions/cart-service_internal_domain.AddCartItemRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Item added successfully
+          schema:
+            $ref: '#/definitions/cart-service_internal_domain.SuccessResponse'
+        "400":
+          description: Invalid request body
+          schema:
+            $ref: '#/definitions/cart-service_internal_domain.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/cart-service_internal_domain.ErrorResponse'
+        "500":
+          description: Failed to add item
+          schema:
+            $ref: '#/definitions/cart-service_internal_domain.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Add item to cart
+      tags:
+      - Cart
+  /cart/item/{product_id}:
+    delete:
+      consumes:
+      - application/json
+      description: Remove a specific product from the user's cart
+      parameters:
+      - description: Product ID
+        in: path
+        name: product_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Item removed successfully
+          schema:
+            $ref: '#/definitions/cart-service_internal_domain.SuccessResponse'
+        "400":
+          description: Invalid product ID format
+          schema:
+            $ref: '#/definitions/cart-service_internal_domain.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/cart-service_internal_domain.ErrorResponse'
+        "500":
+          description: Failed to remove item
+          schema:
+            $ref: '#/definitions/cart-service_internal_domain.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Remove item from cart
+      tags:
+      - Cart
+    put:
+      consumes:
+      - application/json
+      description: Update the quantity of a specific product in the cart
+      parameters:
+      - description: Product ID
+        in: path
+        name: product_id
+        required: true
+        type: string
+      - description: Updated quantity
+        in: body
+        name: item
+        required: true
+        schema:
+          $ref: '#/definitions/cart-service_internal_domain.UpdateCartItemRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Item updated successfully
+          schema:
+            $ref: '#/definitions/cart-service_internal_domain.SuccessResponse'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/cart-service_internal_domain.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/cart-service_internal_domain.ErrorResponse'
+        "500":
+          description: Failed to update item
+          schema:
+            $ref: '#/definitions/cart-service_internal_domain.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update cart item quantity
+      tags:
+      - Cart
+securityDefinitions:
+  BearerAuth:
+    description: Type "Bearer" followed by a space and JWT token.
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

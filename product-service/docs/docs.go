@@ -56,37 +56,37 @@ const docTemplate = `{
                     "201": {
                         "description": "Category created successfully",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.CategorySuccessResponse"
+                            "$ref": "#/definitions/product-service_internal_domain.CategorySuccessResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request body",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/product-service_internal_domain.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/product-service_internal_domain.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Access denied: Admins only",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/product-service_internal_domain.ErrorResponse"
                         }
                     },
                     "409": {
                         "description": "category already exists",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/product-service_internal_domain.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "could not create category",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/product-service_internal_domain.ErrorResponse"
                         }
                     }
                 }
@@ -163,13 +163,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/product-service_internal_service.PaginatedProducts"
+                            "$ref": "#/definitions/product-service_internal_domain.PaginatedProducts"
                         }
                     },
                     "500": {
                         "description": "could not retrieve products",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/product-service_internal_domain.ErrorResponse"
                         }
                     }
                 }
@@ -206,37 +206,37 @@ const docTemplate = `{
                     "201": {
                         "description": "Product created successfully",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ProductSuccessResponse"
+                            "$ref": "#/definitions/product-service_internal_domain.SuccessResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request body / missing required fields / invalid category ID",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/product-service_internal_domain.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/product-service_internal_domain.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Access denied: Admins only",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/product-service_internal_domain.ErrorResponse"
                         }
                     },
                     "409": {
                         "description": "product already exists",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/product-service_internal_domain.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "could not create product",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/product-service_internal_domain.ErrorResponse"
                         }
                     }
                 }
@@ -268,25 +268,25 @@ const docTemplate = `{
                     "200": {
                         "description": "product",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ProductResponse"
+                            "$ref": "#/definitions/product-service_internal_domain.ProductDataResponse"
                         }
                     },
                     "400": {
                         "description": "invalid product ID",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/product-service_internal_domain.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "product not found",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/product-service_internal_domain.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "could not retrieve product",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/product-service_internal_domain.ErrorResponse"
                         }
                     }
                 }
@@ -330,31 +330,31 @@ const docTemplate = `{
                     "200": {
                         "description": "Product updated successfully",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ProductSuccessResponse"
+                            "$ref": "#/definitions/product-service_internal_domain.ProductSuccessResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request body",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/product-service_internal_domain.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/product-service_internal_domain.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Access denied: Admins only",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/product-service_internal_domain.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "could not update product",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/product-service_internal_domain.ErrorResponse"
                         }
                     }
                 }
@@ -389,37 +389,37 @@ const docTemplate = `{
                     "200": {
                         "description": "Product deleted successfully",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.SuccessResponse"
+                            "$ref": "#/definitions/product-service_internal_domain.SuccessResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid product ID",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/product-service_internal_domain.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/product-service_internal_domain.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Access denied: Admins only",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/product-service_internal_domain.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "product not found",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/product-service_internal_domain.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "could not delete product",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/product-service_internal_domain.ErrorResponse"
                         }
                     }
                 }
@@ -470,31 +470,31 @@ const docTemplate = `{
                     "200": {
                         "description": "Stock updated successfully",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.SuccessResponse"
+                            "$ref": "#/definitions/product-service_internal_domain.SuccessResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid product ID or request body",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/product-service_internal_domain.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/product-service_internal_domain.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Access denied: Admins only",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/product-service_internal_domain.ErrorResponse"
                         }
                     },
                     "409": {
                         "description": "Insufficient stock or product not found",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/product-service_internal_domain.ErrorResponse"
                         }
                     }
                 }
@@ -502,46 +502,6 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "internal_handler.CategorySuccessResponse": {
-            "type": "object",
-            "properties": {
-                "category": {},
-                "message": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_handler.ErrorResponse": {
-            "type": "object",
-            "properties": {
-                "error": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_handler.ProductResponse": {
-            "type": "object",
-            "properties": {
-                "product": {}
-            }
-        },
-        "internal_handler.ProductSuccessResponse": {
-            "type": "object",
-            "properties": {
-                "message": {
-                    "type": "string"
-                },
-                "product": {}
-            }
-        },
-        "internal_handler.SuccessResponse": {
-            "type": "object",
-            "properties": {
-                "message": {
-                    "type": "string"
-                }
-            }
-        },
         "product-service_internal_domain.Category": {
             "type": "object",
             "required": [
@@ -580,6 +540,17 @@ const docTemplate = `{
                 }
             }
         },
+        "product-service_internal_domain.CategorySuccessResponse": {
+            "type": "object",
+            "properties": {
+                "category": {
+                    "$ref": "#/definitions/product-service_internal_domain.Category"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
         "product-service_internal_domain.CreateProductRequest": {
             "type": "object",
             "required": [
@@ -608,6 +579,37 @@ const docTemplate = `{
                 "stock": {
                     "type": "integer",
                     "minimum": 0
+                }
+            }
+        },
+        "product-service_internal_domain.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                }
+            }
+        },
+        "product-service_internal_domain.PaginatedProducts": {
+            "type": "object",
+            "properties": {
+                "limit": {
+                    "type": "integer"
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "products": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/product-service_internal_domain.ProductResponse"
+                    }
+                },
+                "total": {
+                    "type": "integer"
+                },
+                "total_pages": {
+                    "type": "integer"
                 }
             }
         },
@@ -650,6 +652,14 @@ const docTemplate = `{
                 }
             }
         },
+        "product-service_internal_domain.ProductDataResponse": {
+            "type": "object",
+            "properties": {
+                "product": {
+                    "$ref": "#/definitions/product-service_internal_domain.ProductResponse"
+                }
+            }
+        },
         "product-service_internal_domain.ProductResponse": {
             "type": "object",
             "properties": {
@@ -679,6 +689,25 @@ const docTemplate = `{
                 }
             }
         },
+        "product-service_internal_domain.ProductSuccessResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                },
+                "product": {
+                    "$ref": "#/definitions/product-service_internal_domain.ProductResponse"
+                }
+            }
+        },
+        "product-service_internal_domain.SuccessResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
         "product-service_internal_domain.UpdateProductRequest": {
             "type": "object",
             "properties": {
@@ -701,29 +730,6 @@ const docTemplate = `{
                 "stock": {
                     "type": "integer",
                     "minimum": 0
-                }
-            }
-        },
-        "product-service_internal_service.PaginatedProducts": {
-            "type": "object",
-            "properties": {
-                "limit": {
-                    "type": "integer"
-                },
-                "page": {
-                    "type": "integer"
-                },
-                "products": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/product-service_internal_domain.ProductResponse"
-                    }
-                },
-                "total": {
-                    "type": "integer"
-                },
-                "total_pages": {
-                    "type": "integer"
                 }
             }
         }

@@ -13,6 +13,12 @@ services:
     volumes:
       - ./product-service:/app
 
+  cart-service:
+    build:
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./cart-service:/app
+
   user-db:
     ports:
       - "${USER_DB_PORT:-5432}:5432"
@@ -20,3 +26,7 @@ services:
   product-db:
     ports:
       - "${PRODUCT_DB_PORT:-5433}:5432"
+
+  cart-redis:
+    ports:
+      - "${CART_REDIS_PORT:-6379}:6379"

@@ -85,7 +85,7 @@ func (h *ProductHandler) Create(c *gin.Context) {
 // @Param max_price query number false "Maximum price"
 // @Param sort_by query string false "Sort field" default(created_at)
 // @Param order query string false "Sort order (asc/desc)" default(desc)
-// @Success 200 {object} service.PaginatedProducts
+// @Success 200 {object} domain.PaginatedProducts
 // @Failure 500 {object} domain.ErrorResponse "could not retrieve products"
 // @Router /products [get]
 func (h *ProductHandler) Get(c *gin.Context) {
