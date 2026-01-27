@@ -431,54 +431,6 @@ paths:
       summary: Update product
       tags:
       - Products
-  /products/{id}/stock:
-    patch:
-      consumes:
-      - application/json
-      description: Add or remove product stock (Admin only)
-      parameters:
-      - description: Product ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      - description: Stock adjustment (positive to add, negative to remove)
-        in: body
-        name: stock
-        required: true
-        schema:
-          properties:
-            add:
-              type: integer
-          type: object
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Stock updated successfully
-          schema:
-            $ref: '#/definitions/product-service_internal_domain.SuccessResponse'
-        "400":
-          description: Invalid product ID or request body
-          schema:
-            $ref: '#/definitions/product-service_internal_domain.ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/product-service_internal_domain.ErrorResponse'
-        "403":
-          description: 'Access denied: Admins only'
-          schema:
-            $ref: '#/definitions/product-service_internal_domain.ErrorResponse'
-        "409":
-          description: Insufficient stock or product not found
-          schema:
-            $ref: '#/definitions/product-service_internal_domain.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Update product stock
-      tags:
-      - Products
 securityDefinitions:
   BearerAuth:
     description: Type "Bearer" followed by a space and JWT token.

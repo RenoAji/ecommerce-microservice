@@ -1,0 +1,187 @@
+basePath: /api/v1
+definitions:
+  order-service_internal_domain.CreateOrderRequest:
+    properties:
+      product_ids:
+        items:
+          type: string
+        minItems: 1
+        type: array
+    type: object
+  order-service_internal_domain.Order:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: integer
+      items:
+        items:
+          $ref: '#/definitions/order-service_internal_domain.OrderItem'
+        type: array
+      status:
+        type: string
+      total_amount:
+        type: integer
+      user_id:
+        type: integer
+    type: object
+  order-service_internal_domain.OrderItem:
+    properties:
+      id:
+        type: integer
+      name:
+        description: Snapshot of name at time of order
+        type: string
+      order_id:
+        type: integer
+      price:
+        description: Snapshot of price at time of order
+        type: integer
+      product_id:
+        type: string
+      quantity:
+        type: integer
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: renoaji25sep@gmail.com
+    name: Septareno Nugroho Aji
+  description: This is the order management service for the e-commerce platform.
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  termsOfService: http://swagger.io/terms/
+  title: Order Service API
+  version: "1.0"
+paths:
+  /order:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all orders for the authenticated user with optional status
+        filter
+      parameters:
+      - default: PENDING
+        description: Filter by order status
+        in: query
+        name: status
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/order-service_internal_domain.Order'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Failed to retrieve orders
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get user's orders
+      tags:
+      - Orders
+    post:
+      consumes:
+      - application/json
+      description: Create a new order from cart items. Can order all cart items or
+        specific products by providing product IDs.
+      parameters:
+      - description: Order details with optional product IDs. Leave empty to checkout
+          entire cart.
+        in: body
+        name: order
+        schema:
+          $ref: '#/definitions/order-service_internal_domain.CreateOrderRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Order created successfully
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid request body
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Failed to create order
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a new order
+      tags:
+      - Orders
+  /order/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a specific order by its ID for the authenticated user
+      parameters:
+      - description: Order ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/order-service_internal_domain.Order'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Order not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Failed to retrieve order
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get order by ID
+      tags:
+      - Orders
+securityDefinitions:
+  BearerAuth:
+    description: Type "Bearer" followed by a space and JWT token.
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

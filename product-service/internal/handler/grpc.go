@@ -37,3 +37,21 @@ func (s *ProductGRPCServer) GetProduct(ctx context.Context, req *pb.GetProductRe
         Price: p.Price,
     }, nil
 }
+
+func (s *ProductGRPCServer) UpdateStock(ctx context.Context, req *pb.UpdateStockRequest) (*pb.UpdateStockResponse, error) {
+    // 1. Call your existing business logic
+    id, err := strconv.ParseUint(req.Id, 10, 64)
+    if err != nil {
+        return nil, status.Errorf(codes.InvalidArgument, "invalid product id")
+    }
+    
+    err = s.service.AddStock(uint(id), int(req.Add))
+    if err != nil {
+        return nil, status.Errorf(codes.Internal, "could not update stock")
+    }
+
+    // 2. Return success response
+    return &pb.UpdateStockResponse{
+        Message: "Stock updated successfully",
+    }, nil
+}

@@ -8,7 +8,10 @@ swagger-product:
 swagger-cart:
 	cd cart-service && swag init -g cmd/api/main.go --parseDependency --parseInternal
 
-swagger: swagger-user swagger-product swagger-cart
+swagger-order:
+	cd order-service && swag init -g cmd/api/main.go --parseDependency --parseInternal
+
+swagger: swagger-user swagger-product swagger-cart swagger-order
 
 .PHONY: swagger swagger-user swagger-product swagger-cart
 # Run all services

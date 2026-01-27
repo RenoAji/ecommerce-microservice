@@ -145,50 +145,6 @@ func (h *ProductHandler) GetByID(c *gin.Context) {
 	c.JSON(http.StatusOK, domain.ProductDataResponse{Product: domain.ToProductResponse(*product)})
 }
 
-// AddStock godoc
-// @Summary Update product stock
-// @Description Add or remove product stock (Admin only)
-// @Tags Products
-// @Accept json
-// @Produce json
-// @Security BearerAuth
-// @Param id path int true "Product ID"
-// @Param stock body object{add=int} true "Stock adjustment (positive to add, negative to remove)"
-// @Success 200 {object} domain.SuccessResponse "Stock updated successfully"
-// @Failure 400 {object} domain.ErrorResponse "Invalid product ID or request body"
-// @Failure 401 {object} domain.ErrorResponse "Unauthorized"
-// @Failure 403 {object} domain.ErrorResponse "Access denied: Admins only"
-// @Failure 409 {object} domain.ErrorResponse "Insufficient stock or product not found"
-// @Router /products/{id}/stock [patch]
-func (h *ProductHandler) AddStock(c *gin.Context) {
-	// 1. Get ID from URL
-	idParam := c.Param("id")
-
-	// Parse the ID to uint
-	productID, err := strconv.ParseUint(idParam, 10, 32)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, domain.ErrorResponse{Error: "Invalid product ID"})
-		return
-	}
-
-	// Bind JSON body
-	var req struct {
-		Add int `json:"add" binding:"required"`
-	}
-
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, domain.ErrorResponse{Error: "Invalid request body"})
-		return
-	}
-
-	if err := h.productService.AddStock(uint(productID), req.Add); err != nil {
-		c.JSON(http.StatusConflict, domain.ErrorResponse{Error: err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, domain.SuccessResponse{Message: "Stock updated successfully"})
-}
-
 // Delete godoc
 // @Summary Delete product
 // @Description Delete a product by ID (Admin only)

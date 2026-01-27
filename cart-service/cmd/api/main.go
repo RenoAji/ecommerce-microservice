@@ -7,6 +7,7 @@ import (
 	"cart-service/internal/service"
 	"cart-service/pb"
 	"log"
+	"net"
 
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
@@ -79,6 +80,23 @@ func main() {
 			cart.DELETE("", hdl.ClearCart)
 		}
 	}
+
+		// Start gRPC Server in a goroutine
+	go func() {
+		lis, err := net.Listen("tcp", ":50051")
+		if err != nil {
+			log.Fatalf("Failed to listen on port 50051: %v", err)
+		}
+		
+		grpcServer := grpc.NewServer(grpc.UnaryInterceptor(middleware.InternalAuthInterceptor))
+		grpcHandler := handler.NewCartGRPCServer(svc)
+		pb.RegisterCartServiceServer(grpcServer, grpcHandler)
+		
+		log.Println("gRPC server starting on port 50051...")
+		if err := grpcServer.Serve(lis); err != nil {
+			log.Fatalf("Failed to serve gRPC: %v", err)
+		}
+	}()
 
 	// Swagger Documentation Route
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))

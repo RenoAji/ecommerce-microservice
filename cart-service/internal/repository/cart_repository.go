@@ -11,9 +11,10 @@ import (
 
 type CartRepository interface {
 	GetCart(ctx context.Context, userID string) ([]*domain.CartItem, error)
+	GetCartItems(ctx context.Context, userID string, productIDs []string) ([]*domain.CartItem, error)
 	SaveCart(ctx context.Context, userID string, item *domain.CartItem) error
 	ClearCart(ctx context.Context, userID string) error
-	DeleteCartItem(ctx context.Context, userID string, productID string) error
+	DeleteCartItems(ctx context.Context, userID string, productIDs []string) error
 	UpdateCartItem(ctx context.Context, userID string, productID string, qty int) error
 }
 
@@ -46,6 +47,29 @@ func (r *RedisCartRepository) GetCart(ctx context.Context, userID string) ([]*do
 	return items, nil
 }
 
+func (r *RedisCartRepository) GetCartItems(ctx context.Context, userID string, productIDs []string) ([]*domain.CartItem, error) {
+	key := "cart:" + userID
+	result, err := r.redisClient.HMGet(ctx, key, productIDs...).Result()
+
+	if err != nil {
+		return nil, err
+	}
+
+	var items []*domain.CartItem
+	for _, v := range result {
+		if v == nil {
+			continue
+		}
+		var item domain.CartItem
+		if err := json.Unmarshal([]byte(v.(string)), &item); err != nil {
+			return nil, err
+		}
+		items = append(items, &item)
+	}
+
+	return items, nil
+}
+
 func (r *RedisCartRepository) SaveCart(ctx context.Context, userID string, item *domain.CartItem) error {
 		key := "cart:" + userID
     data, _ := json.Marshal(item)
@@ -64,9 +88,9 @@ func (r *RedisCartRepository) ClearCart(ctx context.Context, userID string) erro
 	return r.redisClient.Del(ctx, key).Err()
 }
 
-func (r *RedisCartRepository) DeleteCartItem(ctx context.Context, userID string, productID string) error {
+func (r *RedisCartRepository) DeleteCartItems(ctx context.Context, userID string, productIDs []string) error {
 	key := "cart:" + userID
-	return r.redisClient.HDel(ctx, key, productID).Err()
+	return r.redisClient.HDel(ctx, key, productIDs...).Err()
 }
 
 func (r *RedisCartRepository) UpdateCartItem(ctx context.Context, userID string, productID string, qty int) error {

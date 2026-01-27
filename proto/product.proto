@@ -10,12 +10,24 @@ message GetProductRequest {
 
 // The response message containing product details
 message ProductResponse {
-  uint32 id = 1;
+  string id = 1;
   string name = 2;
   int64 price = 3;
+}
+
+// The request message for updating stock
+message UpdateStockRequest {
+  string id = 1;
+  int32 add = 2;
+}
+
+// The response message for updating stock
+message UpdateStockResponse {
+  string message = 1;
 }
 
 // Service definition
 service ProductService {
   rpc GetProduct(GetProductRequest) returns (ProductResponse);
+  rpc UpdateStock(UpdateStockRequest) returns (UpdateStockResponse);
 }

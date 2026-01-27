@@ -86,7 +86,6 @@ func main() {
 		adminRoutes.Use(middleware.AdminMiddleware())
 		{
 			adminRoutes.POST("/products", ProductHandler.Create)
-			adminRoutes.PATCH("/products/:id/stock", ProductHandler.AddStock)
 			adminRoutes.PUT("/products/:id", ProductHandler.Update)
 			adminRoutes.DELETE("/products/:id", ProductHandler.Delete)
 			adminRoutes.POST("/categories", CategoryHandler.Create)

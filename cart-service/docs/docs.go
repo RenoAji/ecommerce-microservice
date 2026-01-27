@@ -316,6 +316,9 @@ const docTemplate = `{
         "cart-service_internal_domain.CartItem": {
             "type": "object",
             "properties": {
+                "name": {
+                    "type": "string"
+                },
                 "price": {
                     "type": "integer"
                 },

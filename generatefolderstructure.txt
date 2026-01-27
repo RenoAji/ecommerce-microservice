@@ -1,0 +1,3 @@
+
+mkdir -p {cmd/api,internal/{domain,handler,repository,service,middleware},docs,pb}
+touch {cmd/api/main.go,internal/{domain/order_domain.go,handler/order_handler.go,repository/order_repository.go,service/order_service.go,middleware/auth_middleware.go},.env,.env.example,.gitignore,go.mod,Dockerfile,Dockerfile.dev}

@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+package cart;
+option go_package = "./pb";
+
+// The request needs a user_id to find the correct Redis hash
+message GetCartRequest {
+  string user_id = 1;
+}
+
+message GetCartItemRequest {
+  string user_id = 1;
+  repeated string product_ids = 2;
+}
+
+// Individual item details stored in the cart
+message CartItem {
+  string product_id = 1;
+  string name = 2;
+  int64 price = 3;
+  int32 quantity = 4;
+}
+
+// The full cart response
+message CartResponse {
+  string user_id = 1;
+  repeated CartItem items = 2;
+  int64 total_price = 3;
+}
+
+// Service definition
+service CartService {
+  // Order service calls this to "pull" the cart data
+  rpc GetUserCart(GetCartRequest) returns (CartResponse);
+  
+  // Order service calls this to empty the cart after a successful checkout
+  rpc ClearUserCart(GetCartRequest) returns (EmptyResponse);
+
+  // Order service calls this to get specific items in the cart
+  rpc GetCartItems(GetCartItemRequest) returns (CartResponse);
+
+  // remove only specific items from the cart
+  rpc RemoveCartItems(GetCartItemRequest) returns (EmptyResponse);
+}
+
+message EmptyResponse {}

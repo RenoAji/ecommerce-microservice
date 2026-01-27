@@ -40,6 +40,10 @@ func (s *CartService) GetCart(ctx context.Context, userID uint) (*domain.Cart, e
 	return &cart, nil
 }
 
+func (s *CartService) GetCartItems(ctx context.Context, userID uint, productIDs []string) ([]*domain.CartItem, error) {
+	return s.repo.GetCartItems(ctx, strconv.FormatUint(uint64(userID), 10), productIDs)
+}
+
 func (s *CartService) AddToCart(ctx context.Context, userID uint, item *domain.AddCartItemRequest) error {
     md := metadata.Pairs("authorization", "Bearer "+os.Getenv("INTERNAL_SECRET"))
     ctx = metadata.NewOutgoingContext(ctx, md)
@@ -65,6 +69,7 @@ func (s *CartService) AddToCart(ctx context.Context, userID uint, item *domain.A
     cartItem := &domain.CartItem{
         ProductID: item.ProductID,
         Quantity:  item.Quantity,
+		Name:      resp.Name,
         Price:     resp.Price,
     }
 
@@ -75,8 +80,8 @@ func (s *CartService) ClearCart(ctx context.Context, userID uint) error {
 	return s.repo.ClearCart(ctx, strconv.FormatUint(uint64(userID), 10))
 }	
 
-func (s *CartService) RemoveCartItem(ctx context.Context, userID uint, productId string) error {
-	return s.repo.DeleteCartItem(ctx, strconv.FormatUint(uint64(userID), 10), productId)
+func (s *CartService) RemoveCartItems(ctx context.Context, userID uint, productIds []string) error {
+	return s.repo.DeleteCartItems(ctx, strconv.FormatUint(uint64(userID), 10), productIds)
 }
 
 func (s *CartService) UpdateCartItem(ctx context.Context, userID uint, productId string, qty int) error {

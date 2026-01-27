@@ -26,6 +26,8 @@ definitions:
     type: object
   cart-service_internal_domain.CartItem:
     properties:
+      name:
+        type: string
       price:
         type: integer
       product_id:

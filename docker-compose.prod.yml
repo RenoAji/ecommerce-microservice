@@ -34,3 +34,13 @@ services:
 
   cart-redis:
     restart: always
+
+  # --- ORDER SERVICE ---
+  order-service:
+    build:
+      dockerfile: Dockerfile
+    restart: always
+
+  order-db:
+    ports: []
+    restart: always

@@ -96,9 +96,13 @@ make swagger-cart
 ### Generate Protocol Buffers
 
 ```bash
-# Generate for both services
+# Generate for all services
 protoc --go_out=product-service --go-grpc_out=product-service proto/product.proto
 protoc --go_out=cart-service --go-grpc_out=cart-service proto/product.proto
+protoc --go_out=order-service --go-grpc_out=order-service proto/product.proto
+
+protoc --go_out=cart-service --go-grpc_out=cart-service proto/cart.proto
+protoc --go_out=order-service --go-grpc_out=order-service proto/cart.proto
 ```
 
 ## 🔐 Authentication
@@ -126,6 +130,7 @@ Interactive API documentation is available via Swagger UI (after running the ser
 - **User Service**: http://localhost:8080/user-docs/index.html
 - **Product Service**: http://localhost:8080/product-docs/index.html
 - **Cart Service**: http://localhost:8080/cart-docs/index.html
+- **Order Service**: http://localhost:8080/order-docs/index.html
 
 The Swagger UI provides:
 

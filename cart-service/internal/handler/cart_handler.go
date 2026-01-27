@@ -116,7 +116,7 @@ func (h *CartHandler) RemoveFromCart(c *gin.Context) {
 	}
 
 	// Call service to remove cart item
-	err := h.cartService.RemoveCartItem(ctx, userID, productID)
+	err := h.cartService.RemoveCartItems(ctx, userID, []string{productID})
 	if err != nil {
 		c.JSON(500, domain.ErrorResponse{Error: "Failed to remove cart item"})
 		return
