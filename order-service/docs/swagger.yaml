@@ -4,7 +4,7 @@ definitions:
     properties:
       product_ids:
         items:
-          type: string
+          type: integer
         minItems: 1
         type: array
     type: object
@@ -18,6 +18,10 @@ definitions:
         items:
           $ref: '#/definitions/order-service_internal_domain.OrderItem'
         type: array
+      payment_expires:
+        type: string
+      payment_url:
+        type: string
       status:
         type: string
       total_amount:
@@ -38,7 +42,7 @@ definitions:
         description: Snapshot of price at time of order
         type: integer
       product_id:
-        type: string
+        type: integer
       quantity:
         type: integer
     type: object
@@ -109,7 +113,7 @@ paths:
       - application/json
       responses:
         "201":
-          description: Order created successfully
+          description: Order received
           schema:
             additionalProperties:
               type: string

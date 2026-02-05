@@ -7,12 +7,21 @@ This project is for learning purpose inspired from https://roadmap.sh/projects/s
 - **User Service**: Handles Authentication (JWT), Profile, and Registration.
 - **Product Service**: Manages Catalog, Categories, Stock adjustments, and gRPC API for internal service communication.
 - **Cart Service**: Manages shopping cart operations with Redis storage and communicates with Product Service via gRPC.
+- **Order Service**: Handles order creation, orchestrates cart, product, and payment services via gRPC.
+- **Payment Service**: Integrates with Midtrans payment gateway, handles webhooks, and manages payment lifecycle.
 - **API Gateway (Nginx)**: Routes HTTP traffic to services. Accessible via port `8080` (specified in .env).
 
 ### Service Communication
 
 - **HTTP/REST**: External client ↔ API Gateway ↔ Services
-- **gRPC**: Internal service-to-service (Cart Service → Product Service)
+- **gRPC**: Internal service-to-service communication
+  - Order Service → Cart Service
+  - Order Service → Product Service
+  - Order Service → Payment Service
+- **Redis Streams**: Event-driven architecture for:
+  - Stock reservation events
+  - Payment success/failure events
+  - Stock insufficient events
 - **Redis**: Cart data storage with 7-day TTL
 
 ## 🏁 Getting Started
@@ -33,15 +42,22 @@ USER_DB_NAME=user_db
 JWT_SECRET=super_secret_key_change_me
 
 PRODUCT_DB_NAME=product_db
+ORDER_DB_NAME=order_db
+PAYMENT_DB_NAME=payment_db
 
-CART_REDIS_PASSWORD=
+REDIS_PASSWORD=
+
+MIDTRANS_SERVER_KEY=your_midtrans_server_key
+MIDTRANS_CLIENT_KEY=your_midtrans_client_key
 
 INTERNAL_SECRET=internal_secret_key_change_me
 
 GATEWAY_PORT=8080
 USER_DB_PORT=5432
 PRODUCT_DB_PORT=5433
-CART_REDIS_PORT=6379
+ORDER_DB_PORT=5434
+PAYMENT_DB_PORT=5435
+REDIS_PORT=6379
 ```
 
 ### 3. Run with Docker
@@ -60,7 +76,9 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
 - 🔌 **Database ports mapped** to host (can be configured in `.env`):
   - User DB: `localhost:5432`
   - Product DB: `localhost:5433`
-  - Cart Redis: `localhost:6379`
+  - Order DB: `localhost:5434`
+  - Payment DB: `localhost:5435`
+  - Redis: `localhost:6379` (DB 0 for Cart, DB 1 for Broker)
 - 📦 **Larger images** (includes dev tools)
 
 #### Production Mode
@@ -73,8 +91,8 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build
 
 **Production Features:**
 
-- 📦 **Smaller container images** (multi-stage builds)
-- 🔒 **Database ports not exposed** (internal network only)
+- 📦 **Smaller container images**
+- 🔒 **Database ports not exposed**
 - 🚀 **No auto-restart** (code changes require rebuild)
 
 ## 🔧 Development
@@ -82,6 +100,7 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build
 ### Generate Swagger Documentation
 
 ```bash
+# Generate for all services
 make swagger
 ```
 
@@ -91,18 +110,23 @@ Or generate for individual services:
 make swagger-user
 make swagger-product
 make swagger-cart
+make swagger-order
+make swagger-payment
 ```
 
 ### Generate Protocol Buffers
 
 ```bash
 # Generate for all services
-protoc --go_out=product-service --go-grpc_out=product-service proto/product.proto
-protoc --go_out=cart-service --go-grpc_out=cart-service proto/product.proto
-protoc --go_out=order-service --go-grpc_out=order-service proto/product.proto
+make proto
+```
 
-protoc --go_out=cart-service --go-grpc_out=cart-service proto/cart.proto
-protoc --go_out=order-service --go-grpc_out=order-service proto/cart.proto
+Or generate for individual proto files:
+
+```bash
+make proto-product  # Generates product.proto for product, cart, and order services
+make proto-cart     # Generates cart.proto for cart and order services
+make proto-payment  # Generates payment.proto for payment and order services
 ```
 
 ## 🔐 Authentication
@@ -131,6 +155,7 @@ Interactive API documentation is available via Swagger UI (after running the ser
 - **Product Service**: http://localhost:8080/product-docs/index.html
 - **Cart Service**: http://localhost:8080/cart-docs/index.html
 - **Order Service**: http://localhost:8080/order-docs/index.html
+- **Payment Service**: http://localhost:8080/payment-docs/index.html
 
 The Swagger UI provides:
 

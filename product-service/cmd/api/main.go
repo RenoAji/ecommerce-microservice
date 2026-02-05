@@ -1,16 +1,23 @@
 package main
 
 import (
-	"fmt"
+	"context"
 	"log"
 	"net"
+	"net/http"
 	"os"
+	"os/signal"
+	"product-service/internal/config"
 	"product-service/internal/domain"
 	"product-service/internal/handler"
+	"product-service/internal/infrastructure"
 	"product-service/internal/middleware"
 	"product-service/internal/repository"
+	"product-service/internal/worker"
 	"product-service/pb"
+	"syscall"
 
+	"product-service/internal/database"
 	"product-service/internal/service"
 	"time"
 
@@ -18,8 +25,6 @@ import (
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"google.golang.org/grpc"
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
 
 	_ "product-service/docs"
 )
@@ -43,38 +48,49 @@ import (
 // @name Authorization
 // @description Type "Bearer" followed by a space and JWT token.
 func main() {
-	// Get database settings from environment variables (provided by docker-compose)
-	host := os.Getenv("DB_HOST")
-	user := os.Getenv("DB_USER")
-	password := os.Getenv("DB_PASSWORD")
-	dbname := os.Getenv("DB_NAME")
-	port := os.Getenv("DB_PORT")
+	// Load configuration
+	cfg := config.LoadConfig()
 
-	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable", host, user, password, dbname, port)
-	var db *gorm.DB
-	var err error
-
-	for i := 0; i < 10; i++ {
-		db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
-		if err == nil {
-			break
-		}
-		log.Printf("Waiting for database... attempt %d", i+1)
-		time.Sleep(2 * time.Second)
-	}
-
+	// Set up database connection
+	db, err := infrastructure.NewPostgresDB(cfg.GetDSN())
 	if err != nil {
-		log.Fatal("Could not connect to database after 10 attempts")
+		log.Fatal("Failed to connect to database: ", err)
 	}
 
 	// Auto-migrate (creates the table if it doesn't exist)
 	db.AutoMigrate(&domain.Product{})
 	db.AutoMigrate(&domain.Category{})
 
+	// Seed initial data
+	database.SeedData(db)
+
+	// Redis Broker Client
+	redisBrokerClient := infrastructure.NewRedisBroker(cfg.GetRedisAddr(), cfg.RedisBroker.Password, cfg.RedisBroker.DB)
+
+	// Repository Service, and handlers
 	repo := repository.NewPostgresRepository(db)
-	svc := service.NewProductService(repo)
+	eventRepo := repository.NewRedisRepository(redisBrokerClient)
+	svc := service.NewProductService(repo, eventRepo)
 	ProductHandler := handler.NewProductHandler(svc)
 	CategoryHandler := handler.NewCategoryHandler(svc)
+	
+	// Create cancellable context for graceful shutdown
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// Initialize Redis Consumer Group
+	err = infrastructure.InitProductConsumerGroup(ctx, redisBrokerClient)
+	if err != nil {
+		log.Fatalf("Failed to initialize consumer group: %v", err)
+	}
+    
+
+	// Worker for consuming order messages
+	orderWorker := worker.NewOrderWorker(redisBrokerClient, svc)
+	go orderWorker.ListenForOrders(ctx)
+
+	stockInsufficientWorker := worker.NewPaymentFailedWorker(redisBrokerClient, svc)
+	go stockInsufficientWorker.ListenForPaymentFailures(ctx)
 
 	r := gin.Default()
 
@@ -100,25 +116,59 @@ func main() {
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	// Start gRPC Server in a goroutine
+	var grpcServer *grpc.Server
 	go func() {
 		lis, err := net.Listen("tcp", ":50051")
 		if err != nil {
 			log.Fatalf("Failed to listen on port 50051: %v", err)
 		}
 		
-		grpcServer := grpc.NewServer(grpc.UnaryInterceptor(middleware.InternalAuthInterceptor))
+		grpcServer = grpc.NewServer(grpc.UnaryInterceptor(middleware.InternalAuthInterceptor))
 		grpcHandler := handler.NewProductGRPCServer(svc)
 		pb.RegisterProductServiceServer(grpcServer, grpcHandler)
 		
 		log.Println("gRPC server starting on port 50051...")
 		if err := grpcServer.Serve(lis); err != nil {
-			log.Fatalf("Failed to serve gRPC: %v", err)
+			log.Printf("gRPC server stopped: %v", err)
 		}
 	}()
 
-	// Start HTTP Server
-	log.Println("Product Service starting on port 8081...")
-	if err := r.Run(":8081"); err != nil {
-		log.Fatal("Failed to start server: ", err)
+	// Start HTTP Server in a goroutine
+	srv := &http.Server{
+		Addr:    ":" + cfg.ServerPort,
+		Handler: r,
 	}
+	
+	go func() {
+		log.Println("Product Service starting on port " + cfg.ServerPort + "...")
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("Failed to start server: %v", err)
+		}
+	}()
+
+	// Setup signal handling for graceful shutdown
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	
+	<-quit
+	log.Println("Shutting down servers...")
+
+	// Cancel context to stop worker
+	cancel()
+
+	// Graceful shutdown with timeout
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer shutdownCancel()
+
+	// Shutdown HTTP server
+	if err := srv.Shutdown(shutdownCtx); err != nil {
+		log.Printf("HTTP server forced to shutdown: %v", err)
+	}
+
+	// Shutdown gRPC server
+	if grpcServer != nil {
+		grpcServer.GracefulStop()
+	}
+
+	log.Println("Servers gracefully stopped")
 }

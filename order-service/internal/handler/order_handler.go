@@ -25,7 +25,7 @@ func NewOrderHandler(orderService *service.OrderService) *OrderHandler {
 // @Produce json
 // @Security BearerAuth
 // @Param order body domain.CreateOrderRequest false "Order details with optional product IDs. Leave empty to checkout entire cart."
-// @Success 201 {object} map[string]string "Order created successfully"
+// @Success 201 {object} map[string]string "Order received"
 // @Failure 400 {object} map[string]string "Invalid request body"
 // @Failure 401 {object} map[string]string "Unauthorized"
 // @Failure 500 {object} map[string]string "Failed to create order"
@@ -50,7 +50,7 @@ func (h *OrderHandler) PostOrder(c *gin.Context) {
 		return
 	}
 
-	c.JSON(201, gin.H{"message": "Order created successfully"})
+	c.JSON(201, gin.H{"message": "Order received"})
 }
 
 // GetOrders godoc
@@ -95,10 +95,9 @@ func (h *OrderHandler) GetOrders(c *gin.Context) {
 // @Router /order/{id} [get]
 func (h *OrderHandler) GetOrderByID(c *gin.Context) {
 	ctx := c.Request.Context()
-	userID := c.GetUint("userID")
 	orderID := c.Param("id")
 
-	order, err := h.orderService.GetOrderByID(ctx, orderID, userID)
+	order, err := h.orderService.GetOrderByID(ctx, orderID)
 	if err != nil {
 		log.Println("Error retrieving order:", err)
 		

@@ -1,25 +1,26 @@
 package main
 
 import (
-	"fmt"
+	"context"
 	"log"
+	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
 
+	"order-service/internal/config"
 	"order-service/internal/domain"
 	"order-service/internal/handler"
+	"order-service/internal/infrastructure"
 	"order-service/internal/middleware"
 	"order-service/internal/repository"
 	"order-service/internal/service"
-	"order-service/pb"
+	"order-service/internal/worker"
 
 	_ "order-service/docs"
 )
@@ -43,52 +44,63 @@ import (
 // @name Authorization
 // @description Type "Bearer" followed by a space and JWT token.
 func main() {
-	// Get database settings from environment variables (provided by docker-compose)
-	host := os.Getenv("DB_HOST")
-	user := os.Getenv("DB_USER")
-	password := os.Getenv("DB_PASSWORD")
-	dbname := os.Getenv("DB_NAME")
-	port := os.Getenv("DB_PORT")
+	// Load configuration
+	cfg := config.LoadConfig()
 
-	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable", host, user, password, dbname, port)
-	var db *gorm.DB
-	var err error
-
-	for i := 0; i < 10; i++ {
-		db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
-		if err == nil {
-			break
-		}
-		log.Printf("Waiting for database... attempt %d", i+1)
-		time.Sleep(2 * time.Second)
-	}
-
+	// Set up database connection
+	db, err := infrastructure.NewPostgresDB(cfg.GetDSN())
 	if err != nil {
-		log.Fatal("Could not connect to database after 10 attempts")
+		log.Fatal("Failed to connect to database: ", err)
 	}
 
 	// Auto-migrate (creates the table if it doesn't exist)
 	db.AutoMigrate(&domain.Order{}, &domain.OrderItem{})
 
-
 	// Set up gRPC connection to Cart Service
-	conn, err := grpc.NewClient("cart-service:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
-    if err != nil {
-        log.Fatalf("did not connect: %v", err)
-    }
-	CartClient := pb.NewCartServiceClient(conn)
+	CartClient := infrastructure.NewCartGRPCClient(cfg.CartSvcAddr)
 
 	// Set up gRPC connection to Product Service
-	conn, err = grpc.NewClient("product-service:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
-    if err != nil {
-        log.Fatalf("did not connect: %v", err)
-    }
-	ProductClient := pb.NewProductServiceClient(conn)
+	ProductClient := infrastructure.NewProductGRPCClient(cfg.ProductSvcAddr)
 
+	// Set up GRPC connection to Payment Service
+	PaymentClient := infrastructure.NewPaymentGRPCClient(cfg.PaymentSvcAddr)
+
+	// Redis Broker Client
+	redisBrokerClient := infrastructure.NewRedisBroker(cfg.GetRedisAddr(), cfg.RedisBroker.Password, cfg.RedisBroker.DB)
+
+
+	// Initialize repositories, services, and handlers
 	repo := repository.NewPostgresRepository(db)
-	svc := service.NewOrderService(repo, CartClient, ProductClient)
+	brokerRepo := repository.NewRedisRepository(redisBrokerClient)
+	svc := service.NewOrderService(repo, brokerRepo, CartClient, ProductClient, PaymentClient)
 	hdl := handler.NewOrderHandler(svc)
 	
+	// Create cancellable context for graceful shutdown
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// Initialize Redis Consumer Group
+	err = infrastructure.InitOrderConsumerGroup(ctx, redisBrokerClient)
+	if err != nil {
+		log.Fatalf("Failed to initialize consumer group: %v", err)
+	}
+
+	// Worker for consuming order messages
+	StockreservedWorker := worker.NewStockreservedWorker(redisBrokerClient, svc)
+	go StockreservedWorker.ListenForStockReserved(ctx)
+
+	// Worker for consuming stock insufficient messages
+	StockInsufficientWorker := worker.NewStockInsufficientWorker(redisBrokerClient, svc)
+	go StockInsufficientWorker.ListenForStockInsufficient(ctx)
+
+	// Worker for consuming payment success messages
+	PaidSuccessWorker := worker.NewPaidSuccessWorker(redisBrokerClient, svc)
+	go PaidSuccessWorker.ListenForPaidSuccess(ctx)
+
+	// Worker for consuming payment failed messages
+	PaymentFailedWorker := worker.NewPaymentFailedWorker(redisBrokerClient, svc)
+	go PaymentFailedWorker.ListenForPaymentFailed(ctx)
+
 	// register routes
 	r := gin.Default()
 
@@ -108,8 +120,39 @@ func main() {
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	// Start Server
-	log.Println("Order Service starting on port 8081...")
-	if err := r.Run(":8081"); err != nil {
-		log.Fatal("Failed to start server: ", err)
+	// log.Println("Order Service starting on port 8081...")
+	// if err := r.Run(":8081"); err != nil {
+	// 	log.Fatal("Failed to start server: ", err)
+	// }
+
+	srv := &http.Server{
+		Addr:    ":" + cfg.ServerPort,
+		Handler: r,
+	}
+
+	go func() {
+		log.Println("Order Service starting on port " + cfg.ServerPort + "...")
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("Failed to start server: %v", err)
+		}
+	}()
+
+	// Setup signal handling for graceful shutdown
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	
+	<-quit
+	log.Println("Shutting down servers...")
+
+	// Cancel context to stop worker
+	cancel()
+
+	// Graceful shutdown with timeout
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer shutdownCancel()
+
+	// Shutdown HTTP server
+	if err := srv.Shutdown(shutdownCtx); err != nil {
+		log.Printf("HTTP server forced to shutdown: %v", err)
 	}
 }

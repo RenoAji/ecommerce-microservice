@@ -2,6 +2,7 @@ package repository
 
 import (
 	"errors"
+	"fmt"
 	"product-service/internal/domain"
 
 	"gorm.io/gorm"
@@ -18,6 +19,7 @@ type ProductRepository interface {
 	RemoveCategory(productID uint, categoryID uint) error
 	ListCategories(productID uint) ([]domain.Category, error)
 	UpdateProduct(id uint, req *domain.UpdateProductRequest) (*domain.Product, error)
+	AddStocksInTransaction(updates map[uint]int) error
 }
 
 type PostgresRepository struct {
@@ -169,6 +171,27 @@ func (r *PostgresRepository) ListCategories(productID uint) ([]domain.Category, 
 }
 
 // UPDATE
+
+func (r *PostgresRepository) AddStocksInTransaction(updates map[uint]int) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		for productID, add := range updates {
+			result := tx.Model(&domain.Product{}).
+				Where("id = ?", productID).
+				Where("stock + ? >= 0", add).
+				UpdateColumn("stock", gorm.Expr("stock + ?", add))
+
+			if result.Error != nil {
+				return result.Error
+			}
+
+			// If no rows were changed, it means the product ID is wrong OR the result would have been negative.
+			if result.RowsAffected == 0 {
+				return errors.New("product not found or resulting stock would be negative for product ID " + fmt.Sprint(productID))
+			}
+		}
+		return nil
+	})
+}
 
 func (r *PostgresRepository) UpdateProduct(id uint, req *domain.UpdateProductRequest) (*domain.Product, error) {
     var product domain.Product

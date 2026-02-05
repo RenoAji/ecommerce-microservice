@@ -1,0 +1,54 @@
+basePath: /api/v1
+host: localhost:8081
+info:
+  contact:
+    email: renoaji25sep@gmail.com
+    name: Septareno Nugroho Aji
+  description: Payment service for handling Midtrans payment webhooks and payment
+    status
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  termsOfService: http://swagger.io/terms/
+  title: Payment Service API
+  version: "1.0"
+paths:
+  /payment/webhook:
+    post:
+      consumes:
+      - application/json
+      description: Receives payment notifications from Midtrans (success, failed,
+        expired, pending)
+      parameters:
+      - description: Midtrans notification payload
+        in: body
+        name: notification
+        required: true
+        schema:
+          additionalProperties: true
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Webhook processed successfully
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid signature or payload
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Handle Midtrans payment webhook
+      tags:
+      - Payment
+swagger: "2.0"

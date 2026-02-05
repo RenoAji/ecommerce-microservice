@@ -44,9 +44,10 @@ services:
     volumes:
       - product_postgres_data:/var/lib/postgresql/data
 
-  cart-redis:
+  redis:
     image: redis:7-alpine
-    container_name: cart-redis
+    container_name: redis
+    command: ["redis-server", "--appendonly", "yes"]
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -70,6 +71,22 @@ services:
       - app-network
     volumes:
       - order_postgres_data:/var/lib/postgresql/data
+
+  payment-db:
+    image: postgres:15-alpine
+    container_name: payment-db
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${PAYMENT_DB_NAME}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${PAYMENT_DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+    networks:
+      - app-network
+    volumes:
+      - payment_postgres_data:/var/lib/postgresql/data
 
   # --- SERVICE SKELETONS ---
   user-service:
@@ -99,6 +116,9 @@ services:
       DB_NAME: ${PRODUCT_DB_NAME}
       JWT_SECRET: ${JWT_SECRET}
       INTERNAL_SECRET: ${INTERNAL_SERVICE_SECRET}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-""}
     depends_on:
       product-db:
         condition: service_healthy
@@ -109,13 +129,13 @@ services:
     build:
       context: ./cart-service
     environment:
-      REDIS_HOST: cart-redis
+      REDIS_HOST: redis
       REDIS_PORT: 6379
-      REDIS_PASSWORD: ${CART_REDIS_PASSWORD:-""}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-""}
       JWT_SECRET: ${JWT_SECRET}
       INTERNAL_SECRET: ${INTERNAL_SERVICE_SECRET}
     depends_on:
-      cart-redis:
+      redis:
         condition: service_healthy
     networks:
       - app-network
@@ -131,8 +151,38 @@ services:
       DB_NAME: ${ORDER_DB_NAME}
       JWT_SECRET: ${JWT_SECRET}
       INTERNAL_SECRET: ${INTERNAL_SERVICE_SECRET}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-""}
     depends_on:
       order-db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  payment-service:
+    build:
+      context: ./payment-service
+    environment:
+      DB_HOST: payment-db
+      DB_PORT: 5432
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${PAYMENT_DB_NAME}
+      JWT_SECRET: ${JWT_SECRET}
+      INTERNAL_SECRET: ${INTERNAL_SERVICE_SECRET}
+      MIDTRANS_SERVER_KEY: ${MIDTRANS_SERVER_KEY}
+      MIDTRANS_CLIENT_KEY: ${MIDTRANS_CLIENT_KEY}
+      MIDTRANS_ENVIRONMENT: ${MIDTRANS_ENVIRONMENT:-sandbox}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-""}
+    depends_on:
+      payment-db:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     networks:
       - app-network
@@ -145,3 +195,4 @@ volumes:
   user_postgres_data:
   product_postgres_data:
   order_postgres_data:
+  payment_postgres_data:

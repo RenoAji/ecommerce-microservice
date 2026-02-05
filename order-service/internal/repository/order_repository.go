@@ -10,7 +10,9 @@ import (
 type OrderRepository interface {
 	AddOrder(ctx context.Context, order *domain.Order) error
 	GetOrders(ctx context.Context, userID uint, status string) ([]domain.Order, error)
-	GetOrderByID(ctx context.Context, orderID string, userID uint) (*domain.Order, error)
+	GetOrderByID(ctx context.Context, orderID string) (*domain.Order, error)
+	UpdateOrderStatus(ctx context.Context, orderID string, status string) error
+	UpdatePaymentUrl(ctx context.Context, orderID string, paymentUrl string) error
 }
 
 type PostgresRepository struct {
@@ -37,10 +39,18 @@ func (r *PostgresRepository) GetOrders(ctx context.Context, userID uint, status 
 	return orders, nil
 }
 
-func (r *PostgresRepository) GetOrderByID(ctx context.Context, orderID string, userID uint) (*domain.Order, error) {
+func (r *PostgresRepository) GetOrderByID(ctx context.Context, orderID string) (*domain.Order, error) {
 	var order domain.Order
-	if err := r.db.WithContext(ctx).Where("id = ? AND user_id = ?", orderID, userID).Preload("Items").First(&order).Error; err != nil {
+	if err := r.db.WithContext(ctx).Where("id = ?", orderID).Preload("Items").First(&order).Error; err != nil {
 		return nil, err
 	}
 	return &order, nil
+}
+
+func (r *PostgresRepository) UpdateOrderStatus(ctx context.Context, orderID string, status string) error {
+	return r.db.WithContext(ctx).Model(&domain.Order{}).Where("id = ?", orderID).Update("status", status).Error
+}
+
+func (r *PostgresRepository) UpdatePaymentUrl(ctx context.Context, orderID string, paymentUrl string) error { 
+	return r.db.WithContext(ctx).Model(&domain.Order{}).Where("id = ?", orderID).Update("payment_url", paymentUrl).Error
 }

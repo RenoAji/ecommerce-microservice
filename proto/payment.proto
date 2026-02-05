@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package payment;
+option go_package = "./pb";
+
+message GetPaymentRequest {
+    uint32 order_id = 1;
+    uint64 amount = 2;
+}
+
+message GetPaymentResponse {
+    string payment_url = 1;
+}
+
+service PaymentService {
+    rpc GetPaymentURL (GetPaymentRequest) returns (GetPaymentResponse);
+}

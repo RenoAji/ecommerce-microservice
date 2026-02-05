@@ -109,7 +109,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "201": {
-                        "description": "Order created successfully",
+                        "description": "Order received",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -220,7 +220,7 @@ const docTemplate = `{
                     "type": "array",
                     "minItems": 1,
                     "items": {
-                        "type": "string"
+                        "type": "integer"
                     }
                 }
             }
@@ -239,6 +239,12 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/order-service_internal_domain.OrderItem"
                     }
+                },
+                "payment_expires": {
+                    "type": "string"
+                },
+                "payment_url": {
+                    "type": "string"
                 },
                 "status": {
                     "type": "string"
@@ -269,7 +275,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "product_id": {
-                    "type": "string"
+                    "type": "integer"
                 },
                 "quantity": {
                     "type": "integer"

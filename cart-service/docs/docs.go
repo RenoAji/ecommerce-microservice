@@ -285,7 +285,7 @@ const docTemplate = `{
             ],
             "properties": {
                 "product_id": {
-                    "type": "string"
+                    "type": "integer"
                 },
                 "quantity": {
                     "type": "integer",
@@ -323,7 +323,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "product_id": {
-                    "type": "string"
+                    "type": "integer"
                 },
                 "quantity": {
                     "type": "integer"

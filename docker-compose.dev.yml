@@ -25,6 +25,12 @@ services:
     volumes:
       - ./order-service:/app
 
+  payment-service:
+    build:
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./payment-service:/app
+
   user-db:
     ports:
       - "${USER_DB_PORT:-5432}:5432"
@@ -33,10 +39,14 @@ services:
     ports:
       - "${PRODUCT_DB_PORT:-5433}:5432"
 
-  cart-redis:
+  redis:
     ports:
-      - "${CART_REDIS_PORT:-6379}:6379"
+      - "${REDIS_PORT:-6379}:6379"
 
   order-db:
     ports:
       - "${ORDER_DB_PORT:-5434}:5432"
+
+  payment-db:
+    ports:
+      - "${PAYMENT_DB_PORT:-5435}:5432"

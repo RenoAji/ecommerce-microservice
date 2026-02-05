@@ -3,7 +3,7 @@ definitions:
   cart-service_internal_domain.AddCartItemRequest:
     properties:
       product_id:
-        type: string
+        type: integer
       quantity:
         minimum: 1
         type: integer
@@ -31,7 +31,7 @@ definitions:
       price:
         type: integer
       product_id:
-        type: string
+        type: integer
       quantity:
         type: integer
     type: object

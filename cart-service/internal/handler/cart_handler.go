@@ -109,14 +109,15 @@ func (h *CartHandler) RemoveFromCart(c *gin.Context) {
 	}
 
 	// Get product ID from URL parameter
-	productID := c.Param("product_id")
-	if _, err := strconv.Atoi(productID); err != nil {
+	productIDStr := c.Param("product_id")
+	productID, err := strconv.ParseUint(productIDStr, 10, 64)
+	if err != nil {
 		c.JSON(400, domain.ErrorResponse{Error: "Invalid product ID format"})
 		return
 	}
 
 	// Call service to remove cart item
-	err := h.cartService.RemoveCartItems(ctx, userID, []string{productID})
+	err = h.cartService.RemoveCartItems(ctx, userID, []uint{uint(productID)})
 	if err != nil {
 		c.JSON(500, domain.ErrorResponse{Error: "Failed to remove cart item"})
 		return
@@ -183,8 +184,9 @@ func (h *CartHandler) UpdateCartItem(c *gin.Context) {
 	}
 
 	// Get product ID from URL parameter
-	productID := c.Param("product_id")
-	if _, err := strconv.Atoi(productID); err != nil {
+	productIDStr := c.Param("product_id")
+	_, err := strconv.ParseUint(productIDStr, 10, 64)
+	if err != nil {
 		c.JSON(400, domain.ErrorResponse{Error: "Invalid product ID format"})
 		return
 	}
@@ -197,7 +199,7 @@ func (h *CartHandler) UpdateCartItem(c *gin.Context) {
 	}
 
 	// Call service to update cart item
-	err := h.cartService.UpdateCartItem(ctx, userID, productID, updateRequest.Quantity)
+	err = h.cartService.UpdateCartItem(ctx, userID, productIDStr, updateRequest.Quantity)
 	if err != nil {
 		c.JSON(500, domain.ErrorResponse{Error: "Failed to update cart item"})
 		return

@@ -32,7 +32,7 @@ services:
       dockerfile: Dockerfile
     restart: always
 
-  cart-redis:
+  redis:
     restart: always
 
   # --- ORDER SERVICE ---
@@ -42,5 +42,15 @@ services:
     restart: always
 
   order-db:
+    ports: []
+    restart: always
+
+  # --- PAYMENT SERVICE ---
+  payment-service:
+    build:
+      dockerfile: Dockerfile
+    restart: always
+
+  payment-db:
     ports: []
     restart: always

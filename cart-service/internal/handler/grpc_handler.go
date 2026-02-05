@@ -28,16 +28,16 @@ func (s *CartGRPCServer) GetUserCart(ctx context.Context, req *pb.GetCartRequest
 
 	for _, item := range cart.Items {
 		items = append(items, &pb.CartItem{
-			ProductId: item.ProductID,
-			Quantity:  int32(item.Quantity),
-			Price:     item.Price,
+			ProductId: uint32(item.ProductID),
+			Quantity:  uint32(item.Quantity),
+			Price:     uint64(item.Price),
 		})
 	}
 
 	return &pb.CartResponse{
 		UserId:    cart.UserID,
 		Items:     items,
-		TotalPrice:  int64(cart.TotalAmt),
+		TotalPrice:  uint64(cart.TotalAmt),
 	}, nil
 }
 
@@ -47,7 +47,12 @@ func (s *CartGRPCServer) GetCartItems(ctx context.Context, req *pb.GetCartItemRe
 		return nil, err
 	}
 
-	cart, err := s.service.GetCartItems(ctx, uint(userId), req.ProductIds)
+	productIds := make([]uint, len(req.ProductIds))
+	for i, id := range req.ProductIds {
+		productIds[i] = uint(id)
+	}
+
+	cart, err := s.service.GetCartItems(ctx, uint(userId), productIds)
 
 	if err != nil {
 		return nil, err
@@ -56,20 +61,20 @@ func (s *CartGRPCServer) GetCartItems(ctx context.Context, req *pb.GetCartItemRe
 	// Pre-allocate memory to avoid multiple re-allocations
 	items := make([]*pb.CartItem, 0, len(cart)) 
 
-	var totalAmt int64 = 0
+	var totalAmt uint = 0
 	for _, item := range cart {
 		items = append(items, &pb.CartItem{
-			ProductId: item.ProductID,
-			Quantity:  int32(item.Quantity),
-			Price:     item.Price,
+			ProductId: uint32(item.ProductID),
+			Quantity:  uint32(item.Quantity),
+			Price:     uint64(item.Price),
 		})
-		totalAmt += int64(item.Quantity) * item.Price
+		totalAmt += uint(item.Quantity) * item.Price
 	}
 
 	return &pb.CartResponse{
 		UserId:    req.UserId,
 		Items:     items,
-		TotalPrice:  totalAmt,
+		TotalPrice:  uint64(totalAmt),
 	}, nil
 }
 
@@ -79,7 +84,12 @@ func (s *CartGRPCServer) RemoveCartItems(ctx context.Context, req *pb.GetCartIte
 		return nil, err
 	}
 
-	err = s.service.RemoveCartItems(ctx, uint(userId), req.ProductIds)
+	productIds := make([]uint, len(req.ProductIds))
+	for i, id := range req.ProductIds {
+		productIds[i] = uint(id)
+	}
+
+	err = s.service.RemoveCartItems(ctx, uint(userId), productIds)
 	if err != nil {
 		return nil, err
 	}

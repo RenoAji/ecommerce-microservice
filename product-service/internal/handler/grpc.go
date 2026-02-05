@@ -4,7 +4,6 @@ import (
 	"context"
 	"product-service/internal/service"
 	"product-service/pb" // The folder where your generated code lives
-	"strconv"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -20,10 +19,7 @@ func NewProductGRPCServer(service *service.ProductService) *ProductGRPCServer {
 }
 func (s *ProductGRPCServer) GetProduct(ctx context.Context, req *pb.GetProductRequest) (*pb.ProductResponse, error) {
     // 1. Call your existing business logic
-    id, err := strconv.ParseUint(req.Id, 10, 64)
-    if err != nil {
-        return nil, status.Errorf(codes.InvalidArgument, "invalid product id")
-    }
+    id := uint64(req.Id)
     p, err := s.service.GetProductByID(uint(id))
     if err != nil {
         return nil, status.Errorf(codes.NotFound, "product not found")
@@ -34,18 +30,15 @@ func (s *ProductGRPCServer) GetProduct(ctx context.Context, req *pb.GetProductRe
     return &pb.ProductResponse{
         Id:    uint32(p.ID),
         Name:  p.Name,
-        Price: p.Price,
+        Price: uint64(p.Price),
     }, nil
 }
 
 func (s *ProductGRPCServer) UpdateStock(ctx context.Context, req *pb.UpdateStockRequest) (*pb.UpdateStockResponse, error) {
     // 1. Call your existing business logic
-    id, err := strconv.ParseUint(req.Id, 10, 64)
-    if err != nil {
-        return nil, status.Errorf(codes.InvalidArgument, "invalid product id")
-    }
+    id := uint(req.Id)
     
-    err = s.service.AddStock(uint(id), int(req.Add))
+    err := s.service.AddStock(id, int(req.Add))
     if err != nil {
         return nil, status.Errorf(codes.Internal, "could not update stock")
     }

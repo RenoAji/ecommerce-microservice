@@ -4,6 +4,7 @@ import (
 	"cart-service/internal/domain"
 	"context"
 	"encoding/json"
+	"strconv"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -11,11 +12,11 @@ import (
 
 type CartRepository interface {
 	GetCart(ctx context.Context, userID string) ([]*domain.CartItem, error)
-	GetCartItems(ctx context.Context, userID string, productIDs []string) ([]*domain.CartItem, error)
+	GetCartItems(ctx context.Context, userID string, productIDs []uint) ([]*domain.CartItem, error)
 	SaveCart(ctx context.Context, userID string, item *domain.CartItem) error
 	ClearCart(ctx context.Context, userID string) error
-	DeleteCartItems(ctx context.Context, userID string, productIDs []string) error
-	UpdateCartItem(ctx context.Context, userID string, productID string, qty int) error
+	DeleteCartItems(ctx context.Context, userID string, productIDs []uint) error
+	UpdateCartItem(ctx context.Context, userID string, productID string, qty uint) error
 }
 
 type RedisCartRepository struct {
@@ -47,9 +48,13 @@ func (r *RedisCartRepository) GetCart(ctx context.Context, userID string) ([]*do
 	return items, nil
 }
 
-func (r *RedisCartRepository) GetCartItems(ctx context.Context, userID string, productIDs []string) ([]*domain.CartItem, error) {
+func (r *RedisCartRepository) GetCartItems(ctx context.Context, userID string, productIDs []uint) ([]*domain.CartItem, error) {
 	key := "cart:" + userID
-	result, err := r.redisClient.HMGet(ctx, key, productIDs...).Result()
+	strProductIDs := make([]string, len(productIDs))
+	for i, id := range productIDs {
+		strProductIDs[i] = strconv.FormatUint(uint64(id), 10)
+	}
+	result, err := r.redisClient.HMGet(ctx, key, strProductIDs...).Result()
 
 	if err != nil {
 		return nil, err
@@ -88,15 +93,19 @@ func (r *RedisCartRepository) ClearCart(ctx context.Context, userID string) erro
 	return r.redisClient.Del(ctx, key).Err()
 }
 
-func (r *RedisCartRepository) DeleteCartItems(ctx context.Context, userID string, productIDs []string) error {
+func (r *RedisCartRepository) DeleteCartItems(ctx context.Context, userID string, productIDs []uint) error {
 	key := "cart:" + userID
-	return r.redisClient.HDel(ctx, key, productIDs...).Err()
+	strProductIDs := make([]string, len(productIDs))
+	for i, id := range productIDs {
+		strProductIDs[i] = strconv.FormatUint(uint64(id), 10)
+	}
+	return r.redisClient.HDel(ctx, key, strProductIDs...).Err()
 }
 
-func (r *RedisCartRepository) UpdateCartItem(ctx context.Context, userID string, productID string, qty int) error {
+func (r *RedisCartRepository) UpdateCartItem(ctx context.Context, userID string, productID string, qty uint) error {
     key := "cart:" + userID
 
-    if qty <= 0 {
+    if qty == 0 {
         return r.redisClient.HDel(ctx, key, productID).Err()
     }
 
