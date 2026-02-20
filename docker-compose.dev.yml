@@ -31,6 +31,12 @@ services:
     volumes:
       - ./payment-service:/app
 
+  delivery-service:
+    build:
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./delivery-service:/app
+
   user-db:
     ports:
       - "${USER_DB_PORT:-5432}:5432"
@@ -50,3 +56,7 @@ services:
   payment-db:
     ports:
       - "${PAYMENT_DB_PORT:-5435}:5432"
+
+  delivery-db:
+    ports:
+      - "${DELIVERY_DB_PORT:-5436}:5432"

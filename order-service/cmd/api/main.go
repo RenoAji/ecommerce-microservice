@@ -101,6 +101,14 @@ func main() {
 	PaymentFailedWorker := worker.NewPaymentFailedWorker(redisBrokerClient, svc)
 	go PaymentFailedWorker.ListenForPaymentFailed(ctx)
 
+	// Worker for consuming delivery success messages
+	DeliverySuccessWorker := worker.NewDeliverySuccessWorker(redisBrokerClient, svc)
+	go DeliverySuccessWorker.ListenForDeliverySuccess(ctx)
+
+	// Worker for consuming delivery failed messages
+	DeliveryFailedWorker := worker.NewDeliveryFailedWorker(redisBrokerClient, svc)
+	go DeliveryFailedWorker.ListenForDeliveryFailed(ctx)
+
 	// register routes
 	r := gin.Default()
 

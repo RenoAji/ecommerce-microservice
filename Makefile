@@ -14,9 +14,12 @@ swagger-order:
 swagger-payment:
 	cd payment-service && swag init -g cmd/api/main.go --parseDependency --parseInternal
 
-swagger: swagger-user swagger-product swagger-cart swagger-order swagger-payment
+swagger-delivery:
+	cd delivery-service && swag init -g cmd/api/main.go --parseDependency --parseInternal
 
-.PHONY: swagger swagger-user swagger-product swagger-cart swagger-order swagger-payment
+swagger: swagger-user swagger-product swagger-cart swagger-order swagger-payment swagger-delivery
+
+.PHONY: swagger swagger-user swagger-product swagger-cart swagger-order swagger-payment swagger-delivery
 
 # Protocol Buffer generation
 proto-product:
@@ -32,9 +35,13 @@ proto-payment:
 	protoc --go_out=payment-service --go-grpc_out=payment-service proto/payment.proto
 	protoc --go_out=order-service --go-grpc_out=order-service proto/payment.proto
 
-proto: proto-product proto-cart proto-payment
+proto-delivery:
+	protoc --go_out=delivery-service --go-grpc_out=delivery-service proto/delivery.proto
+	protoc --go_out=order-service --go-grpc_out=order-service proto/delivery.proto
 
-.PHONY: proto proto-product proto-cart proto-payment
+proto: proto-product proto-cart proto-payment proto-delivery
+
+.PHONY: proto proto-product proto-cart proto-payment proto-delivery
 # Run all services
 up:
 	docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build

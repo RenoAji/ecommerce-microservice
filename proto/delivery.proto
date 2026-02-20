@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package delivery;
+option go_package = "./pb";
+
+message GetDeliveryByOrderIdRequest {
+  uint32 order_id = 1;
+}
+
+message DeliveryInfo {
+  uint32 order_id = 1;
+  string status = 4;
+}
+
+message DeliveryResponse {
+  DeliveryInfo delivery = 1;
+}
+
+service DeliveryService {
+  rpc GetDeliveryByOrderId(GetDeliveryByOrderIdRequest) returns (DeliveryResponse);
+}

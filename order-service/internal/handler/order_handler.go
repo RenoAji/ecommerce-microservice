@@ -25,7 +25,7 @@ func NewOrderHandler(orderService *service.OrderService) *OrderHandler {
 // @Produce json
 // @Security BearerAuth
 // @Param order body domain.CreateOrderRequest false "Order details with optional product IDs. Leave empty to checkout entire cart."
-// @Success 201 {object} map[string]string "Order received"
+// @Success 201 {object} map[string]interface{} "Order created with ID"
 // @Failure 400 {object} map[string]string "Invalid request body"
 // @Failure 401 {object} map[string]string "Unauthorized"
 // @Failure 500 {object} map[string]string "Failed to create order"
@@ -40,9 +40,7 @@ func (h *OrderHandler) PostOrder(c *gin.Context) {
 	userID := c.GetUint("userID")
 
 	// Call the service layer to create the order
-	err := h.orderService.CreateOrder(&req, ctx, userID)
-
-	
+	orderID, err := h.orderService.CreateOrder(&req, ctx, userID)
 
 	if err != nil {
 		log.Printf("ERROR creating order: %v", err)
@@ -50,7 +48,7 @@ func (h *OrderHandler) PostOrder(c *gin.Context) {
 		return
 	}
 
-	c.JSON(201, gin.H{"message": "Order received"})
+	c.JSON(201, gin.H{"message": "Order received", "order_id": orderID})
 }
 
 // GetOrders godoc
@@ -68,7 +66,7 @@ func (h *OrderHandler) PostOrder(c *gin.Context) {
 func (h *OrderHandler) GetOrders(c *gin.Context) {
 	ctx := c.Request.Context()
 	userID := c.GetUint("userID")
-	status := c.DefaultQuery("status","PENDING")
+	status := c.DefaultQuery("status","")
 
 	orders, err := h.orderService.GetOrders(ctx, userID, status)
 	if err != nil {

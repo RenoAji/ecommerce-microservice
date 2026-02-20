@@ -16,17 +16,12 @@ func NewRedisBroker(addr string, password string, db int) *redis.Client {
 	})
 }
 
-func InitOrderConsumerGroup(ctx context.Context, client *redis.Client) error  {
-    streams := map[string]string{
-        "stream:stock:reserved": "order-group",
-        "stream:stock:insufficient": "order-group",
-        "stream:payment:success": "order-group",
-        "stream:payment:failed": "order-group",
-        "stream:delivery:delivered": "order-group",
-        "stream:delivery:failed": "order-group",
-    }
+func InitDeliveryConsumerGroup(ctx context.Context, client *redis.Client) error {
+	streams := map[string]string{
+		"stream:payment:success": "delivery-group",
+	}
 
-    for stream, group := range streams {
+	for stream, group := range streams {
         // Create the group. If it already exists, Redis returns an error: "BUSYGROUP"
         err := client.XGroupCreateMkStream(ctx, stream, group, "$").Err()
         
@@ -38,7 +33,7 @@ func InitOrderConsumerGroup(ctx context.Context, client *redis.Client) error  {
         }
     }
     
-    return nil
+	return nil
 }
 
 // MoveToDLQ moves a failed message to a Dead Letter Queue

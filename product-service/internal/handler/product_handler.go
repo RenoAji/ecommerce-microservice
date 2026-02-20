@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"fmt"
 	"net/http"
 	"product-service/internal/domain"
 	"product-service/internal/service"
@@ -122,17 +121,13 @@ func (h *ProductHandler) Get(c *gin.Context) {
 // @Failure 500 {object} domain.ErrorResponse "could not retrieve product"
 // @Router /products/{id} [get]
 func (h *ProductHandler) GetByID(c *gin.Context) {
-	idParam := c.Param("id")
-	var productID uint
-
-	// Parse ID parameter
-	_, err := fmt.Sscanf(idParam, "%d", &productID)
+	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, domain.ErrorResponse{Error: "invalid product ID"})
 		return
 	}
 
-	product, err := h.productService.GetProductByID(productID)
+	product, err := h.productService.GetProductByID(uint(id))
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			c.JSON(http.StatusNotFound, domain.ErrorResponse{Error: "product not found"})

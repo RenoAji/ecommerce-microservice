@@ -36,11 +36,6 @@ func (s *PaymentService) CreatePendingPayment(orderID uint, amount uint) (string
 		CreditCard: &snap.CreditCardDetails{
 			Secure: true,
 		},
-		Expiry: &snap.ExpiryDetails{
-			StartTime: "",
-			Unit:      "minutes", 
-			Duration:  1,  
-		},
 	}
 
 	// 3. Request create Snap transaction to Midtrans
@@ -181,7 +176,7 @@ func (s *PaymentService) handleFailedPayment(orderID string) error{
 func (s *PaymentService) CleanupExpiredPayments(ctx context.Context) {
 	// Find all PENDING payments older than 2 minutes (1min expiry + 1min buffer)
 	// TODO: Change to 35 minutes for production (30min expiry + 5min buffer)
-	expiredPayments, err := s.repo.FindExpiredPendingPayments(2)
+	expiredPayments, err := s.repo.FindExpiredPendingPayments(60)
 	if err != nil {
 		log.Printf("Error finding expired payments: %v", err)
 		return

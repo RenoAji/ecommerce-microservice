@@ -88,6 +88,26 @@ services:
     volumes:
       - payment_postgres_data:/var/lib/postgresql/data
 
+  delivery-db:
+    image: postgres:15-alpine
+    container_name: delivery-db
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DELIVERY_DB_NAME:-delivery_db}
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${DB_USER} -d ${DELIVERY_DB_NAME:-delivery_db}",
+        ]
+      interval: 5s
+      timeout: 5s
+    networks:
+      - app-network
+    volumes:
+      - delivery_postgres_data:/var/lib/postgresql/data
+
   # --- SERVICE SKELETONS ---
   user-service:
     build:
@@ -187,6 +207,29 @@ services:
     networks:
       - app-network
 
+  delivery-service:
+    build:
+      context: ./delivery-service
+    environment:
+      DB_HOST: delivery-db
+      DB_PORT: 5432
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DELIVERY_DB_NAME:-delivery_db}
+      SERVER_PORT: 8081
+      JWT_SECRET: ${JWT_SECRET}
+      INTERNAL_SECRET: ${INTERNAL_SERVICE_SECRET}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-""}
+    depends_on:
+      delivery-db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - app-network
+
 networks:
   app-network:
     driver: bridge
@@ -196,3 +239,4 @@ volumes:
   product_postgres_data:
   order_postgres_data:
   payment_postgres_data:
+  delivery_postgres_data:

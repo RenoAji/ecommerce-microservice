@@ -1,0 +1,134 @@
+basePath: /api/v1
+host: localhost:8080
+info:
+  contact:
+    email: septareno@example.com
+    name: Septareno Nugroho Aji
+  description: This is the delivery management service for the e-commerce platform.
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  termsOfService: http://swagger.io/terms/
+  title: Delivery Service API
+  version: "1.0"
+paths:
+  /delivery:
+    get:
+      consumes:
+      - application/json
+      description: Get all deliveries, optionally filtered by status
+      parameters:
+      - description: Filter by delivery status (PENDING, IN_TRANSIT, DELIVERED, FAILED)
+        in: query
+        name: status
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: List all deliveries
+      tags:
+      - Delivery
+  /delivery/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a specific delivery by its ID
+      parameters:
+      - description: Delivery ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid delivery ID
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Delivery not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get delivery by ID
+      tags:
+      - Delivery
+  /delivery/{id}/status:
+    put:
+      consumes:
+      - application/json
+      description: Update the status of a delivery (PENDING, IN_TRANSIT, DELIVERED,
+        FAILED)
+      parameters:
+      - description: Delivery ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Status update request
+        in: body
+        name: request
+        required: true
+        schema:
+          additionalProperties:
+            type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Delivery status updated successfully
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid delivery ID or request body
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Could not update delivery status
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update delivery status
+      tags:
+      - Delivery
+securityDefinitions:
+  BearerAuth:
+    description: Type "Bearer" followed by a space and JWT token.
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

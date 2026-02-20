@@ -25,7 +25,7 @@ func NewOrderService(repo repository.OrderRepository, eventRepo repository.Order
 	return &OrderService{ repo: repo, eventRepo: eventRepo, cartClient: cartClient, productClient: productClient, paymentClient: paymentClient}
 }
 
-func (s *OrderService) CreateOrder(req *domain.CreateOrderRequest, ctx context.Context, userID uint) error {
+func (s *OrderService) CreateOrder(req *domain.CreateOrderRequest, ctx context.Context, userID uint) (uint, error) {
     md := metadata.Pairs("authorization", "Bearer "+os.Getenv("INTERNAL_SECRET"))
     ctx = metadata.NewOutgoingContext(ctx, md)
 
@@ -47,11 +47,11 @@ func (s *OrderService) CreateOrder(req *domain.CreateOrderRequest, ctx context.C
         })
 
         if err != nil {
-            return fmt.Errorf("failed to fetch cart items: %w", err)
+            return 0, fmt.Errorf("failed to fetch cart items: %w", err)
         }
 
         if len(cartResp.Items) != len(req.ProductIDs) {
-            return fmt.Errorf("invalid product id")
+            return 0, fmt.Errorf("invalid product id")
         }
 
         cartItems = cartResp.Items
@@ -61,7 +61,7 @@ func (s *OrderService) CreateOrder(req *domain.CreateOrderRequest, ctx context.C
             UserId: userIDStr,
         })
         if err != nil {
-            return fmt.Errorf("failed to fetch cart: %w", err)
+            return 0, fmt.Errorf("failed to fetch cart: %w", err)
         }
         cartItems = cartResp.Items
         
@@ -74,7 +74,7 @@ func (s *OrderService) CreateOrder(req *domain.CreateOrderRequest, ctx context.C
 
     // Validate cart not empty
     if len(cartItems) == 0 {
-        return fmt.Errorf("cart is empty or no valid items found") 
+        return 0, fmt.Errorf("cart is empty or no valid items found") 
     }
 
 	// Build order items
@@ -83,10 +83,10 @@ func (s *OrderService) CreateOrder(req *domain.CreateOrderRequest, ctx context.C
 
     for _, cartItem := range cartItems {
 
-		// fetch price from product service to ensure latest price
+        // fetch price from product service to ensure latest price
 		productResp, err := s.productClient.GetProduct(ctx, &pb.GetProductRequest{Id: cartItem.ProductId})
 		if  err != nil {
-			return fmt.Errorf("failed to fetch product details: %w", err)
+			return 0, fmt.Errorf("failed to fetch product details: %w", err)
 		}
 
         orderItems = append(orderItems, domain.OrderItem{
@@ -109,7 +109,7 @@ func (s *OrderService) CreateOrder(req *domain.CreateOrderRequest, ctx context.C
 
         // Save order to database
     if err := s.repo.AddOrder(ctx, order); err != nil {
-        return fmt.Errorf("failed to create order: %w", err)
+        return 0, fmt.Errorf("failed to create order: %w", err)
     }
     log.Printf("Order %d created successfully", order.ID)
 
@@ -120,33 +120,11 @@ func (s *OrderService) CreateOrder(req *domain.CreateOrderRequest, ctx context.C
         TotalAmount: order.TotalAmount,
         Items:       domain.ConvertToOrderItemMessages(order.Items),
     }); err != nil {
-        return fmt.Errorf("failed to publish order created event: %w", err)
+        return 0, fmt.Errorf("failed to publish order created event: %w", err)
     }
     log.Println("Order Event Created")
 
-
-
-
-
-
-    // Clear/remove cart items after successful order
-    // if len(req.ProductIDs) > 0 {
-    //     _, err = s.cartClient.RemoveCartItems(ctx, &pb.GetCartItemRequest{
-    //         UserId:     userIDStr,
-    //         ProductIds: productIDs,
-    //     })
-    // } else {
-    //     _, err = s.cartClient.ClearUserCart(ctx, &pb.GetCartRequest{
-    //         UserId: userIDStr,
-    //     })
-    // }
-
-    // Log error but don't fail the order
-    // if err != nil {
-    //     log.Printf("warning: failed to clear cart: %v", err)
-    // }
-
-    return nil
+    return order.ID, nil
 }
 
 func (s *OrderService) GetOrders(ctx context.Context, userID uint, status string) ([]domain.Order, error) {

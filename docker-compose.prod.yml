@@ -54,3 +54,13 @@ services:
   payment-db:
     ports: []
     restart: always
+
+  # --- DELIVERY SERVICE ---
+  delivery-service:
+    build:
+      dockerfile: Dockerfile
+    restart: always
+
+  delivery-db:
+    ports: []
+    restart: always
