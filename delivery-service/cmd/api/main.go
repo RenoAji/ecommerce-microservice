@@ -84,9 +84,9 @@ func main() {
 		log.Fatalf("Failed to initialize consumer group: %v", err)
 	}
 
-	// Worker for consuming payment success messages
-	paidSuccessWorker := worker.NewPaidSuccessWorker(redisBrokerClient, svc)
-	go paidSuccessWorker.ListenForPaidSuccess(ctx)
+	// Worker for consuming order paid messages
+	orderPaidWorker := worker.NewOrderPaidWorker(redisBrokerClient, svc)
+	go orderPaidWorker.Listen(ctx)
 
 	// Outbox worker for publishing events
 	outboxWorker := worker.NewOutboxWorker(svc)

@@ -114,7 +114,7 @@ func (s *OrderService) CreateOrder(req *domain.CreateOrderRequest, ctx context.C
     log.Printf("Order %d created successfully", order.ID)
 
     // Publish order created event
-    if err := s.eventRepo.PublishOrderCreatedEvent(ctx, &domain.OrderCreatedEvent{
+    if err := s.eventRepo.PublishOrderCreatedEvent(ctx, &domain.OrderEvent{
         OrderID:     strconv.FormatUint(uint64(order.ID), 10),
         UserID:      userIDStr,
         TotalAmount: order.TotalAmount,
@@ -135,7 +135,9 @@ func (s *OrderService) GetOrders(ctx context.Context, userID uint, status string
             "AWAITING_PAYMENT": true,
 			"PAID":      true,
 			"SHIPPED":   true,
+            "DELIVERED": true,
 			"CANCELLED": true,
+            "FAILED":    true,
 		}
 		if !validStatuses[status] {
 			return nil, fmt.Errorf("invalid order status: %s", status)
@@ -150,6 +152,34 @@ func (s *OrderService) GetOrderByID(ctx context.Context, orderID string) (*domai
 
 func (s *OrderService) UpdateOrderStatus(ctx context.Context, orderID string, status string) error {
     return s.repo.UpdateOrderStatus(ctx, orderID, status)
+}
+
+func (s *OrderService) UpdateOrderToPaid(ctx context.Context, orderID string) error {
+    // Update order status to PAID
+    err := s.repo.UpdateOrderStatus(ctx, orderID, "PAID")
+    if err != nil {
+        return fmt.Errorf("failed to update order status: %w", err)
+    }
+    log.Printf("Order %s marked as PAID.", orderID)
+
+    // Publish order paid event
+    order, err := s.repo.GetOrderByID(ctx, orderID)
+    if err != nil {
+        return fmt.Errorf("failed to get order for event publishing: %w", err)
+    }
+
+    userIDStr := strconv.FormatUint(uint64(order.UserID), 10)
+    if err := s.eventRepo.PublishOrderPaidEvent(ctx, &domain.OrderEvent{
+        OrderID:     orderID,
+        UserID:      userIDStr,
+        TotalAmount: order.TotalAmount,
+        Items:       domain.ConvertToOrderItemMessages(order.Items),
+    }); err != nil {
+        return fmt.Errorf("failed to publish order paid event: %w", err)
+    }
+    log.Println("Order Event Paid")
+
+    return nil
 }
 
 func (s *OrderService) ProcessAwaitingPaymentOrders(ctx context.Context, orderID string) error {

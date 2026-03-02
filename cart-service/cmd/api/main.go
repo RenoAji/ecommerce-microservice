@@ -90,8 +90,8 @@ func main() {
 	}
 
 	// Worker for consuming payment success messages
-	paidSuccessWorker := worker.NewPaidSuccessWorker(redisBrokerClient, svc)
-	go paidSuccessWorker.ListenForPaidSuccess(ctx)
+	paidSuccessWorker := worker.NewOrderPaidWorker(redisBrokerClient, svc)
+	go paidSuccessWorker.Listen(ctx)
 
 	// Worker for consuming payment failed messages
 	paymentFailedWorker := worker.NewPaymentFailedWorker(redisBrokerClient, svc)

@@ -1,6 +1,6 @@
 package domain
 
-type OrderCreatedEvent struct {
+type OrderEvent struct {
     OrderID     string             `json:"order_id"`
     UserID      string             `json:"user_id"`
     TotalAmount uint            `json:"total_amount"`

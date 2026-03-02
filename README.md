@@ -43,6 +43,9 @@ This project is for learning purpose inspired from https://roadmap.sh/projects/s
     - Order Service to mark delivery as failed
     - Payment Service to initiate refund (not implemented yet)
       ![alt text](<readme_img/microservice_ecomm_messaging%20(1).png>)
+  - OrderPaid event from Order Service consumed by:
+    - Delivery Service to start delivery process
+    - Cart Service to clear purchased items
 - **Redis**: Cart data storage with 7-day TTL
 
 ## 🏁 Getting Started
@@ -93,6 +96,12 @@ For active development with hot-reload and database port access:
 docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
 ```
 
+or
+
+```bash
+make up
+```
+
 **Development Features:**
 
 - 🔄 **Auto-restart on code changes** (volumes mounted)
@@ -106,7 +115,7 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
   - Broker Redis (DB 1): `localhost:6379`
 - 📦 **Larger images** (includes dev tools)
 
-#### Production Mode
+#### Optimized Container
 
 For optimized container:
 
@@ -114,10 +123,15 @@ For optimized container:
 docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build
 ```
 
-**Production Features:**
+or
+
+```bash
+make prod-up
+```
+
+**Features:**
 
 - 📦 **Smaller container images**
-- 🔒 **Database ports not exposed**
 - 🚀 **No auto-restart** (code changes require rebuild)
 
 ## 🔧 Development
@@ -263,4 +277,3 @@ The Swagger UI provides:
 
 - Implementing outbox pattern for reliable messaging
 - Adding a notification service for email/SMS updates
-- Adding OrderPaid event so delivery service and cart service can consume product Ids and quantity from OrderPaid event instead of consuming payment success event which only contains order Id.

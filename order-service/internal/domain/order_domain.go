@@ -6,7 +6,7 @@ type Order struct {
     ID          uint        `gorm:"primaryKey" json:"id"`
     UserID      uint        `gorm:"index" json:"user_id"`
     TotalAmount uint      `json:"total_amount"`
-    Status      string      `gorm:"default:RECEIVED" json:"status" oneof:"RECEIVED AWAITING_PAYMENT PAID SHIPPED CANCELLED"` 
+    Status      string      `gorm:"default:RECEIVED" json:"status" oneof:"RECEIVED AWAITING_PAYMENT PAID SHIPPED DELIVERED FAILED CANCELLED"` 
     Items       []OrderItem `gorm:"foreignKey:OrderID" json:"items"`
     CreatedAt   time.Time   `json:"created_at"`
     PaymentURL  string      `gorm:"column:payment_url" json:"payment_url,omitempty"`

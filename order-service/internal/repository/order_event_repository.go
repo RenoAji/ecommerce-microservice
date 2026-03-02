@@ -10,7 +10,8 @@ import (
 )
 
 type OrderEventRepository interface {
-	PublishOrderCreatedEvent(ctx context.Context, event *domain.OrderCreatedEvent) error
+	PublishOrderCreatedEvent(ctx context.Context, event *domain.OrderEvent) error
+    PublishOrderPaidEvent(ctx context.Context, event *domain.OrderEvent) error
 }
 
 type RedisRepository struct {
@@ -21,9 +22,8 @@ func NewRedisRepository(redisClient *redis.Client) *RedisRepository {
 	return &RedisRepository{redisClient: redisClient}
 }
 
-func (r *RedisRepository) PublishOrderCreatedEvent(ctx context.Context, event *domain.OrderCreatedEvent) error {
-    // 1. Serialize the items to JSON or a flat map
-    // Redis Streams values must be strings, integers, or floats
+func (r *RedisRepository) PublishOrderCreatedEvent(ctx context.Context, event *domain.OrderEvent) error {
+    // Serialize the items to JSON or a flat map
     itemsJson, _ := json.Marshal(event.Items)
 
     msg := map[string]interface{}{
@@ -34,11 +34,33 @@ func (r *RedisRepository) PublishOrderCreatedEvent(ctx context.Context, event *d
         "created_at":   time.Now().Format(time.RFC3339),
     }
 
-    // 2. Add to Stream
-    // "*" tells Redis to auto-generate a unique Message ID (e.g., 1672531200000-0)
+    // Add to Stream
     err := r.redisClient.XAdd(ctx, &redis.XAddArgs{
         Stream: "stream:orders:created",
-        MaxLen: 1000, // Optional: Keep only the last 1000 messages to save RAM
+        MaxLen: 1000, 
+        Approx: true,
+        Values: msg,
+    }).Err()
+
+    return err
+}
+
+func (r *RedisRepository) PublishOrderPaidEvent(ctx context.Context, event *domain.OrderEvent) error {
+    // Serialize the items to JSON or a flat map
+    itemsJson, _ := json.Marshal(event.Items)
+
+    msg := map[string]interface{}{
+        "order_id":     event.OrderID,
+        "user_id":      event.UserID,
+        "total_amount": event.TotalAmount,
+        "items":        string(itemsJson),
+        "created_at":   time.Now().Format(time.RFC3339),
+    }
+
+    // Add to Stream
+    err := r.redisClient.XAdd(ctx, &redis.XAddArgs{
+        Stream: "stream:orders:paid",
+        MaxLen: 1000, 
         Approx: true,
         Values: msg,
     }).Err()

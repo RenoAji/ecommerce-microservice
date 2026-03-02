@@ -19,6 +19,8 @@ services:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${USER_DB_NAME}
+    ports:
+      - "${USER_DB_PORT:-5432}:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${USER_DB_NAME}"]
       interval: 5s
@@ -35,6 +37,8 @@ services:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${PRODUCT_DB_NAME}
+    ports:
+      - "${PRODUCT_DB_PORT:-5433}:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${PRODUCT_DB_NAME}"]
       interval: 5s
@@ -48,6 +52,8 @@ services:
     image: redis:7-alpine
     container_name: redis
     command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -63,6 +69,8 @@ services:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${ORDER_DB_NAME}
+    ports:
+      - "${ORDER_DB_PORT:-5434}:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${ORDER_DB_NAME}"]
       interval: 5s
@@ -79,6 +87,8 @@ services:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${PAYMENT_DB_NAME}
+    ports:
+      - "${PAYMENT_DB_PORT:-5435}:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${PAYMENT_DB_NAME}"]
       interval: 5s
@@ -95,6 +105,8 @@ services:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DELIVERY_DB_NAME:-delivery_db}
+    ports:
+      - "${DELIVERY_DB_PORT:-5436}:5432"
     healthcheck:
       test:
         [

@@ -19,7 +19,7 @@ func NewRedisBroker(addr string, password string, db int) *redis.Client {
 func InitCartConsumerGroup(ctx context.Context, client *redis.Client) error  {
     streams := map[string]string{
         "stream:payment:failed": "cart-group",
-        "stream:payment:success": "cart-group",
+        "stream:orders:paid": "cart-group",
     }
 
     for stream, group := range streams {
