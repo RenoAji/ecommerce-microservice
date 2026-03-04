@@ -62,6 +62,20 @@ services:
     networks:
       - app-network
 
+  consul:
+    image: hashicorp/consul:1.21
+    container_name: consul
+    command: ["agent", "-dev", "-client=0.0.0.0", "-ui"]
+    ports:
+      - "8500:8500"
+    healthcheck:
+      test: ["CMD", "consul", "info"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+
   order-db:
     image: postgres:15-alpine
     container_name: order-db
@@ -151,8 +165,11 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:-""}
+      CONSUL_ADDR: consul:8500
     depends_on:
       product-db:
+        condition: service_healthy
+      consul:
         condition: service_healthy
     networks:
       - app-network
@@ -166,8 +183,11 @@ services:
       REDIS_PASSWORD: ${REDIS_PASSWORD:-""}
       JWT_SECRET: ${JWT_SECRET}
       INTERNAL_SECRET: ${INTERNAL_SERVICE_SECRET}
+      CONSUL_ADDR: consul:8500
     depends_on:
       redis:
+        condition: service_healthy
+      consul:
         condition: service_healthy
     networks:
       - app-network
@@ -186,10 +206,13 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:-""}
+      CONSUL_ADDR: consul:8500
     depends_on:
       order-db:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      consul:
         condition: service_healthy
     networks:
       - app-network
@@ -203,18 +226,19 @@ services:
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
       DB_NAME: ${PAYMENT_DB_NAME}
-      JWT_SECRET: ${JWT_SECRET}
       INTERNAL_SECRET: ${INTERNAL_SERVICE_SECRET}
       MIDTRANS_SERVER_KEY: ${MIDTRANS_SERVER_KEY}
       MIDTRANS_CLIENT_KEY: ${MIDTRANS_CLIENT_KEY}
-      MIDTRANS_ENVIRONMENT: ${MIDTRANS_ENVIRONMENT:-sandbox}
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:-""}
+      CONSUL_ADDR: consul:8500
     depends_on:
       payment-db:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      consul:
         condition: service_healthy
     networks:
       - app-network
@@ -234,10 +258,13 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:-""}
+      CONSUL_ADDR: consul:8500
     depends_on:
       delivery-db:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      consul:
         condition: service_healthy
     networks:
       - app-network
