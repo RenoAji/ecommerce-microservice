@@ -1,0 +1,13 @@
+go 1.25.7
+
+use (
+	./cart-service
+	./delivery-service
+	./libs/consulclient
+	./libs/infrastructure
+	./order-service
+	./payment-service
+	./product-service
+)
+
+replace google.golang.org/genproto => google.golang.org/genproto v0.0.0-20260226221140-a57be14db171

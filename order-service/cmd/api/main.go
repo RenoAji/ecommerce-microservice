@@ -2,10 +2,12 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
@@ -22,7 +24,10 @@ import (
 	"order-service/internal/service"
 	"order-service/internal/worker"
 
+	"libs/consulclient"
+
 	_ "order-service/docs"
+	// _ "github.com/mbobakov/grpc-consul-resolver"
 )
 
 // @title Order Service API
@@ -56,14 +61,29 @@ func main() {
 	// Auto-migrate (creates the table if it doesn't exist)
 	db.AutoMigrate(&domain.Order{}, &domain.OrderItem{})
 
+	// Set up Consul
+	consulClient, err := consulclient.NewConsulClient(cfg.ConsulAddr)
+	if err != nil {
+		log.Fatal("Failed to create Consul client: ", err)
+	}
+
+	port, err := strconv.Atoi(cfg.ServerPort)
+	if err != nil {
+		log.Fatal("Failed to convert ServerPort to int: ", err)
+	}
+	hostname, _ := os.Hostname()
+	serviceID := fmt.Sprintf("order-service-%s", hostname)
+	consulClient.RegisterService(serviceID, "order-service", port)
+	defer consulClient.DeregisterService(serviceID)
+
 	// Set up gRPC connection to Cart Service
-	CartClient := infrastructure.NewCartGRPCClient(cfg.CartSvcAddr)
+	CartClient := infrastructure.NewCartGRPCClient(cfg.ConsulAddr)
 
 	// Set up gRPC connection to Product Service
-	ProductClient := infrastructure.NewProductGRPCClient(cfg.ProductSvcAddr)
+	ProductClient := infrastructure.NewProductGRPCClient(cfg.ConsulAddr)
 
 	// Set up GRPC connection to Payment Service
-	PaymentClient := infrastructure.NewPaymentGRPCClient(cfg.PaymentSvcAddr)
+	PaymentClient := infrastructure.NewPaymentGRPCClient(cfg.ConsulAddr)
 
 	// Redis Broker Client
 	redisBrokerClient := infrastructure.NewRedisBroker(cfg.GetRedisAddr(), cfg.RedisBroker.Password, cfg.RedisBroker.DB)

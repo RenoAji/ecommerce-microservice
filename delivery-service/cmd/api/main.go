@@ -11,11 +11,13 @@ import (
 	"delivery-service/internal/service"
 	"delivery-service/internal/worker"
 	"delivery-service/pb"
+	"fmt"
 	"log"
 	"net"
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
@@ -23,6 +25,8 @@ import (
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"google.golang.org/grpc"
+
+	"libs/consulclient"
 
 	_ "delivery-service/docs"
 )
@@ -56,10 +60,25 @@ func main() {
 		log.Fatal("Failed to connect to database: ", err)
 	}
 
+	// Set up Consul
+	consulClient, err := consulclient.NewConsulClient(cfg.ConsulAddr)
+	if err != nil {
+		log.Fatal("Failed to create Consul client: ", err)
+	}
+
+	port, err := strconv.Atoi(cfg.ServerPort)
+	if err != nil {
+		log.Fatal("Failed to convert ServerPort to int: ", err)
+	}
+	hostname, _ := os.Hostname()
+	serviceID := fmt.Sprintf("delivery-service-%s", hostname)
+	consulClient.RegisterService(serviceID, "delivery-service", port)
+	defer consulClient.DeregisterService(serviceID)
+
 	// Auto-migrate (creates the table if it doesn't exist)
 	db.AutoMigrate(&domain.Delivery{}, &domain.DeliveryOutboxMessage{})
 
-		// Redis Broker Client for events
+	// Redis Broker Client for events
 	redisBrokerClient := infrastructure.NewRedisBroker(
 		cfg.GetRedisAddr(),
 		cfg.RedisBroker.Password,
@@ -71,8 +90,6 @@ func main() {
 	eventRepo := repository.NewRedisStreamRepository(redisBrokerClient)
 	svc := service.NewDeliveryService(repo, eventRepo)
 	hdl := handler.NewDeliveryHandler(svc)
-
-
 
 	// Create cancellable context for graceful shutdown
 	ctx, cancel := context.WithCancel(context.Background())

@@ -35,6 +35,9 @@ services:
   redis:
     restart: always
 
+  consul:
+    restart: always
+
   # --- ORDER SERVICE ---
   order-service:
     build:

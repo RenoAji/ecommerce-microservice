@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net"
 	"net/http"
@@ -19,12 +20,15 @@ import (
 
 	"product-service/internal/database"
 	"product-service/internal/service"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"google.golang.org/grpc"
+
+	"libs/consulclient"
 
 	_ "product-service/docs"
 )
@@ -57,6 +61,21 @@ func main() {
 		log.Fatal("Failed to connect to database: ", err)
 	}
 
+	// Set up Consul
+	consulClient, err := consulclient.NewConsulClient(cfg.ConsulAddr)
+	if err != nil {
+		log.Fatal("Failed to create Consul client: ", err)
+	}
+
+	port, err := strconv.Atoi(cfg.ServerPort)
+	if err != nil {
+		log.Fatal("Failed to convert ServerPort to int: ", err)
+	}
+	hostname, _ := os.Hostname()
+	serviceID := fmt.Sprintf("product-service-%s", hostname)
+	consulClient.RegisterService(serviceID, "product-service", port)
+	defer consulClient.DeregisterService(serviceID)
+
 	// Auto-migrate (creates the table if it doesn't exist)
 	db.AutoMigrate(&domain.Product{})
 	db.AutoMigrate(&domain.Category{})
@@ -73,7 +92,7 @@ func main() {
 	svc := service.NewProductService(repo, eventRepo)
 	ProductHandler := handler.NewProductHandler(svc)
 	CategoryHandler := handler.NewCategoryHandler(svc)
-	
+
 	// Create cancellable context for graceful shutdown
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -83,7 +102,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to initialize consumer group: %v", err)
 	}
-    
 
 	// Worker for consuming order messages
 	orderWorker := worker.NewOrderWorker(redisBrokerClient, svc)
@@ -122,11 +140,11 @@ func main() {
 		if err != nil {
 			log.Fatalf("Failed to listen on port 50051: %v", err)
 		}
-		
+
 		grpcServer = grpc.NewServer(grpc.UnaryInterceptor(middleware.InternalAuthInterceptor))
 		grpcHandler := handler.NewProductGRPCServer(svc)
 		pb.RegisterProductServiceServer(grpcServer, grpcHandler)
-		
+
 		log.Println("gRPC server starting on port 50051...")
 		if err := grpcServer.Serve(lis); err != nil {
 			log.Printf("gRPC server stopped: %v", err)
@@ -138,7 +156,7 @@ func main() {
 		Addr:    ":" + cfg.ServerPort,
 		Handler: r,
 	}
-	
+
 	go func() {
 		log.Println("Product Service starting on port " + cfg.ServerPort + "...")
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
@@ -149,7 +167,7 @@ func main() {
 	// Setup signal handling for graceful shutdown
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	
+
 	<-quit
 	log.Println("Shutting down servers...")
 

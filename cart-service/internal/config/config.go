@@ -6,13 +6,13 @@ import (
 )
 
 type Config struct {
-	ServerPort      string
-	ProductSvcAddr  string
-	RedisHost       string
-	RedisPort       string
-	RedisPassword   string
-	RedisDB         int
-	RedisBroker     struct {
+	ServerPort    string
+	ConsulAddr    string
+	RedisHost     string
+	RedisPort     string
+	RedisPassword string
+	RedisDB       int
+	RedisBroker   struct {
 		Host     string
 		Port     string
 		Password string
@@ -22,12 +22,12 @@ type Config struct {
 
 func LoadConfig() *Config {
 	return &Config{
-		ServerPort:     getEnv("SERVER_PORT", "8081"),
-		ProductSvcAddr: getEnv("PRODUCT_SERVICE_ADDR", "product-service:50051"),
-		RedisHost:      getEnv("REDIS_HOST", "redis"),
-		RedisPort:      getEnv("REDIS_PORT", "6379"),
-		RedisPassword:  getEnv("REDIS_PASSWORD", ""),
-		RedisDB:        0,
+		ServerPort:    getEnv("SERVER_PORT", "8081"),
+		ConsulAddr:    getEnv("CONSUL_ADDR", "consul:8500"),
+		RedisHost:     getEnv("REDIS_HOST", "redis"),
+		RedisPort:     getEnv("REDIS_PORT", "6379"),
+		RedisPassword: getEnv("REDIS_PASSWORD", ""),
+		RedisDB:       0,
 		RedisBroker: struct {
 			Host     string
 			Port     string
