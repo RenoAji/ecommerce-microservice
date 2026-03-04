@@ -15,6 +15,7 @@ type Config struct {
 	CartSvcAddr    string
 	ProductSvcAddr string
 	PaymentSvcAddr string
+	ConsulAddr     string
 	RedisBroker    struct{
 		Host     string
 		Port     string
@@ -31,9 +32,7 @@ func LoadConfig() *Config {
 		DBName:         getEnv("DB_NAME", "orders_db"),
 		DBPort:         getEnv("DB_PORT", "5432"),
 		ServerPort:     getEnv("SERVER_PORT", "8081"),
-		CartSvcAddr:    getEnv("CART_SVC_ADDR", "cart-service:50051"),
-		ProductSvcAddr: getEnv("PRODUCT_SVC_ADDR", "product-service:50051"),
-		PaymentSvcAddr: getEnv("PAYMENT_SVC_ADDR", "payment-service:50051"),
+		ConsulAddr:    getEnv("CONSUL_ADDR", "consul:8500"),
 		RedisBroker: struct{
 			Host     string
 			Port     string

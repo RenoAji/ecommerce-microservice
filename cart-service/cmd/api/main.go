@@ -8,13 +8,14 @@ import (
 	"cart-service/internal/repository"
 	"cart-service/internal/service"
 	"cart-service/internal/worker"
-	"cart-service/pb"
 	"context"
+	"fmt"
 	"log"
 	"net"
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
@@ -23,7 +24,9 @@ import (
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
+
+	"cart-service/pb"
+	"libs/consulclient"
 
 	_ "cart-service/docs"
 )
@@ -65,15 +68,23 @@ func main() {
 		cfg.RedisBroker.DB,
 	)
 
-	// Set up gRPC connection to Product Service
-	conn, err := grpc.NewClient(cfg.ProductSvcAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	// Set up Consul
+	consulClient, err := consulclient.NewConsulClient(cfg.ConsulAddr)
 	if err != nil {
-		log.Fatalf("did not connect: %v", err)
+		log.Fatal("Failed to create Consul client: ", err)
 	}
-	defer conn.Close()
 
-	// Create the gRPC client stub
-	productClient := pb.NewProductServiceClient(conn)
+	port, err := strconv.Atoi(cfg.ServerPort)
+	if err != nil {
+		log.Fatal("Failed to convert ServerPort to int: ", err)
+	}
+	hostname, _ := os.Hostname()
+	serviceID := fmt.Sprintf("cart-service-%s", hostname)
+	consulClient.RegisterService(serviceID, "cart-service", port)
+	defer consulClient.DeregisterService(serviceID)
+
+	// Set up gRPC connection to Product Service
+	productClient := infrastructure.NewProductGRPCClient(cfg.ConsulAddr)
 
 	repo := repository.NewRedisCartRepository(rdb)
 	svc := service.NewCartService(repo, productClient)
