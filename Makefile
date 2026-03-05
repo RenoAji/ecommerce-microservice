@@ -53,3 +53,25 @@ prod-up:
 	docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build
 
 .PHONY: prod-up
+
+# Test commands
+SERVICES := user-service product-service cart-service order-service payment-service delivery-service
+
+test-unit:
+	@set -e; \
+	for svc in $(SERVICES); do \
+		echo "==> Unit tests: $$svc"; \
+		cd $$svc && go test ./... -cover && cd - >/dev/null; \
+	done
+
+test-integration:
+	@docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d user-db product-db order-db payment-db delivery-db redis consul
+	@set -e; \
+	for svc in $(SERVICES); do \
+		echo "==> Integration tests: $$svc"; \
+		cd $$svc && go test ./... -tags=integration -count=1 && cd - >/dev/null; \
+	done
+
+test-all: test-unit test-integration
+
+.PHONY: test-unit test-integration test-all
