@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   user-service:
     build:
@@ -9,33 +7,38 @@ services:
 
   product-service:
     build:
-      dockerfile: Dockerfile.dev
+      dockerfile: product-service/Dockerfile.dev
     volumes:
       - ./product-service:/app
+      - ./libs:/libs:ro
 
   cart-service:
     build:
-      dockerfile: Dockerfile.dev
+      dockerfile: cart-service/Dockerfile.dev
     volumes:
       - ./cart-service:/app
+      - ./libs:/libs:ro
 
   order-service:
     build:
-      dockerfile: Dockerfile.dev
+      dockerfile: order-service/Dockerfile.dev
     volumes:
       - ./order-service:/app
+      - ./libs:/libs:ro
 
   payment-service:
     build:
-      dockerfile: Dockerfile.dev
+      dockerfile: payment-service/Dockerfile.dev
     volumes:
       - ./payment-service:/app
+      - ./libs:/libs:ro
 
   delivery-service:
     build:
-      dockerfile: Dockerfile.dev
+      dockerfile: delivery-service/Dockerfile.dev
     volumes:
       - ./delivery-service:/app
+      - ./libs:/libs:ro
 
   user-db:
     ports:

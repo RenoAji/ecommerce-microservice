@@ -1,4 +1,4 @@
-FROM golang:1.24-alpine
+FROM golang:1.25-alpine
 
 # Install Air for hot reloading
 RUN go install github.com/air-verse/air@v1.61.7
@@ -6,7 +6,8 @@ RUN go install github.com/air-verse/air@v1.61.7
 WORKDIR /app
 
 # Copy dependency files
-COPY go.mod go.sum ./
+COPY payment-service/go.mod payment-service/go.sum ./
+COPY libs /libs
 RUN go mod download
 
 # We don't COPY . . here because we will use Docker Volumes 
