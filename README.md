@@ -169,6 +169,41 @@ make proto-payment  # Generates payment.proto for payment and order services
 make proto-delivery # Generates delivery.proto for delivery and order services
 ```
 
+### Run Tests
+
+Run all unit tests across services:
+
+```bash
+make test-unit
+```
+
+Run integration tests (will start required infra containers first):
+
+```bash
+make test-integration
+```
+
+Run both unit + integration tests:
+
+```bash
+make test-all
+```
+
+Run tests for a single service:
+
+```bash
+# Unit tests (example: order-service)
+cd order-service && go test ./... -cover
+
+# Integration tests (example: order-service)
+cd order-service && go test ./... -tags=integration -count=1
+```
+
+Notes:
+
+- Integration tests use the `integration` build tag.
+- Some integration tests may skip automatically if Postgres/Redis is not reachable.
+
 ## 🔐 Authentication
 
 Protected routes require a JWT token in the Authorization header:
