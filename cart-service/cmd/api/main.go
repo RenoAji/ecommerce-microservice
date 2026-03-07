@@ -25,8 +25,8 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"google.golang.org/grpc"
 
-	"cart-service/pb"
 	"libs/consulclient"
+	"libs/pb"
 
 	_ "cart-service/docs"
 )

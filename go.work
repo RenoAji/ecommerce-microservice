@@ -5,6 +5,7 @@ use (
 	./delivery-service
 	./libs/consulclient
 	./libs/infrastructure
+	./libs/pb
 	./order-service
 	./payment-service
 	./product-service

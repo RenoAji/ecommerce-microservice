@@ -1,7 +1,7 @@
 syntax = "proto3";
 
 package product;
-option go_package = "./pb";
+option go_package = "libs/pb";
 
 // The request message containing the product ID
 message GetProductRequest {
