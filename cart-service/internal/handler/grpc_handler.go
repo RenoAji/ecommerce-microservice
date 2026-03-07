@@ -2,18 +2,18 @@ package handler
 
 import (
 	"cart-service/internal/service"
-	"cart-service/pb"
 	"context"
+	"libs/pb"
 	"strconv"
 )
 
 type CartGRPCServer struct {
-    pb.UnimplementedCartServiceServer
-    service *service.CartService
+	pb.UnimplementedCartServiceServer
+	service *service.CartService
 }
 
 func NewCartGRPCServer(service *service.CartService) *CartGRPCServer {
-    return &CartGRPCServer{service: service}
+	return &CartGRPCServer{service: service}
 }
 
 func (s *CartGRPCServer) GetUserCart(ctx context.Context, req *pb.GetCartRequest) (*pb.CartResponse, error) {
@@ -24,7 +24,7 @@ func (s *CartGRPCServer) GetUserCart(ctx context.Context, req *pb.GetCartRequest
 	}
 
 	// Pre-allocate memory to avoid multiple re-allocations
-	items := make([]*pb.CartItem, 0, len(cart.Items)) 
+	items := make([]*pb.CartItem, 0, len(cart.Items))
 
 	for _, item := range cart.Items {
 		items = append(items, &pb.CartItem{
@@ -35,9 +35,9 @@ func (s *CartGRPCServer) GetUserCart(ctx context.Context, req *pb.GetCartRequest
 	}
 
 	return &pb.CartResponse{
-		UserId:    cart.UserID,
-		Items:     items,
-		TotalPrice:  uint64(cart.TotalAmt),
+		UserId:     cart.UserID,
+		Items:      items,
+		TotalPrice: uint64(cart.TotalAmt),
 	}, nil
 }
 
@@ -59,7 +59,7 @@ func (s *CartGRPCServer) GetCartItems(ctx context.Context, req *pb.GetCartItemRe
 	}
 
 	// Pre-allocate memory to avoid multiple re-allocations
-	items := make([]*pb.CartItem, 0, len(cart)) 
+	items := make([]*pb.CartItem, 0, len(cart))
 
 	var totalAmt uint = 0
 	for _, item := range cart {
@@ -72,9 +72,9 @@ func (s *CartGRPCServer) GetCartItems(ctx context.Context, req *pb.GetCartItemRe
 	}
 
 	return &pb.CartResponse{
-		UserId:    req.UserId,
-		Items:     items,
-		TotalPrice:  uint64(totalAmt),
+		UserId:     req.UserId,
+		Items:      items,
+		TotalPrice: uint64(totalAmt),
 	}, nil
 }
 

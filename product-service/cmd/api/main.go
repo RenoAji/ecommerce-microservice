@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"libs/pb"
 	"log"
 	"net"
 	"net/http"
@@ -15,7 +16,6 @@ import (
 	"product-service/internal/middleware"
 	"product-service/internal/repository"
 	"product-service/internal/worker"
-	"product-service/pb"
 	"syscall"
 
 	"product-service/internal/database"

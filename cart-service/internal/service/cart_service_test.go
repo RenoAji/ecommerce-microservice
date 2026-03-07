@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"cart-service/internal/domain"
-	"cart-service/pb"
+	"libs/pb"
 
 	"google.golang.org/grpc"
 )
