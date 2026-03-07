@@ -36,6 +36,9 @@ jobs:
             user-service:
               - user-service/**
               - libs/**
+            delivery-service:
+              - delivery-service/**
+              - libs/**
 
   # JOB to run tests
   test:
