@@ -124,6 +124,9 @@ func main() {
 			delivery.GET("/:id", hdl.GetDelivery)
 			delivery.PUT("/:id/status", hdl.UpdateDeliveryStatus)
 		}
+		delivery.GET("/health", func(c *gin.Context) {
+			c.JSON(http.StatusOK, gin.H{"status": "ok"})
+		})
 	}
 
 	// Start gRPC Server in a goroutine
