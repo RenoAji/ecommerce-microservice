@@ -4,19 +4,19 @@ import (
 	"context"
 	"testing"
 
+	"libs/pb"
 	"order-service/internal/domain"
-	"order-service/pb"
 
 	"google.golang.org/grpc"
 )
 
 type mockOrderRepo struct {
-	orders             []domain.Order
-	ordersErr          error
-	updatedOrderID     string
-	updatedStatus      string
-	getOrderByIDResp   *domain.Order
-	getOrderByIDErr    error
+	orders           []domain.Order
+	ordersErr        error
+	updatedOrderID   string
+	updatedStatus    string
+	getOrderByIDResp *domain.Order
+	getOrderByIDErr  error
 }
 
 func (m *mockOrderRepo) AddOrder(ctx context.Context, order *domain.Order) error { return nil }
@@ -31,14 +31,18 @@ func (m *mockOrderRepo) UpdateOrderStatus(ctx context.Context, orderID string, s
 	m.updatedStatus = status
 	return nil
 }
-func (m *mockOrderRepo) UpdatePaymentUrl(ctx context.Context, orderID string, paymentURL string) error { return nil }
+func (m *mockOrderRepo) UpdatePaymentUrl(ctx context.Context, orderID string, paymentURL string) error {
+	return nil
+}
 
 type mockOrderEventRepo struct {
 	paidCalled  bool
 	paidOrderID string
 }
 
-func (m *mockOrderEventRepo) PublishOrderCreatedEvent(ctx context.Context, event *domain.OrderEvent) error { return nil }
+func (m *mockOrderEventRepo) PublishOrderCreatedEvent(ctx context.Context, event *domain.OrderEvent) error {
+	return nil
+}
 func (m *mockOrderEventRepo) PublishOrderPaidEvent(ctx context.Context, event *domain.OrderEvent) error {
 	m.paidCalled = true
 	m.paidOrderID = event.OrderID

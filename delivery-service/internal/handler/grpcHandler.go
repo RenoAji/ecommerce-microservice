@@ -7,7 +7,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"delivery-service/pb"
+	"libs/pb"
 )
 
 type DeliveryGRPCServer struct {

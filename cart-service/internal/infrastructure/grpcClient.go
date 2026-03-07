@@ -3,8 +3,8 @@ package infrastructure
 import (
 	"fmt"
 
-	"cart-service/pb"
 	"libs/infrastructure"
+	"libs/pb"
 )
 
 func NewProductGRPCClient(address string) pb.ProductServiceClient {
