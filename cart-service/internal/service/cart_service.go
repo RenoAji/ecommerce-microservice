@@ -3,18 +3,17 @@ package service
 import (
 	"cart-service/internal/domain"
 	"cart-service/internal/repository"
-	"cart-service/pb"
 	"context"
 	"fmt"
+	"libs/pb"
 	"os"
 	"strconv"
 
 	"google.golang.org/grpc/metadata"
 )
 
-
 type CartService struct {
-	repo repository.CartRepository
+	repo          repository.CartRepository
 	productClient pb.ProductServiceClient
 }
 
@@ -45,16 +44,16 @@ func (s *CartService) GetCartItems(ctx context.Context, userID uint, productIDs 
 }
 
 func (s *CartService) AddToCart(ctx context.Context, userID uint, item *domain.AddCartItemRequest) error {
-    md := metadata.Pairs("authorization", "Bearer "+os.Getenv("INTERNAL_SECRET"))
-    ctx = metadata.NewOutgoingContext(ctx, md)
+	md := metadata.Pairs("authorization", "Bearer "+os.Getenv("INTERNAL_SECRET"))
+	ctx = metadata.NewOutgoingContext(ctx, md)
 
-    resp, err := s.productClient.GetProduct(ctx, &pb.GetProductRequest{Id: uint32(item.ProductID)})
-    if err != nil {
-        return fmt.Errorf("failed to fetch product details: %w", err)
-    }
+	resp, err := s.productClient.GetProduct(ctx, &pb.GetProductRequest{Id: uint32(item.ProductID)})
+	if err != nil {
+		return fmt.Errorf("failed to fetch product details: %w", err)
+	}
 
-    userIDStr := strconv.FormatUint(uint64(userID), 10)
-    
+	userIDStr := strconv.FormatUint(uint64(userID), 10)
+
 	// Check if item already exists
 	existingItems, _ := s.repo.GetCart(ctx, userIDStr)
 	for _, existing := range existingItems {
@@ -65,20 +64,20 @@ func (s *CartService) AddToCart(ctx context.Context, userID uint, item *domain.A
 		}
 	}
 
-    // If not exists, add new item
-    cartItem := &domain.CartItem{
-        ProductID: item.ProductID,
-        Quantity:  item.Quantity,
+	// If not exists, add new item
+	cartItem := &domain.CartItem{
+		ProductID: item.ProductID,
+		Quantity:  item.Quantity,
 		Name:      resp.Name,
-        Price:     uint(resp.Price),
-    }
+		Price:     uint(resp.Price),
+	}
 
-    return s.repo.SaveCart(ctx, userIDStr, cartItem)
+	return s.repo.SaveCart(ctx, userIDStr, cartItem)
 }
 
 func (s *CartService) ClearCart(ctx context.Context, userID uint) error {
 	return s.repo.ClearCart(ctx, strconv.FormatUint(uint64(userID), 10))
-}	
+}
 
 func (s *CartService) RemoveCartItems(ctx context.Context, userID uint, productIds []uint) error {
 	return s.repo.DeleteCartItems(ctx, strconv.FormatUint(uint64(userID), 10), productIds)

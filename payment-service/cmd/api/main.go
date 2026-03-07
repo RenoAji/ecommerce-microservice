@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"libs/pb"
 	"log"
 	"net"
 	"net/http"
@@ -16,7 +17,6 @@ import (
 	"payment-service/internal/repository"
 	"payment-service/internal/service"
 	"payment-service/internal/worker"
-	"payment-service/pb"
 	"strconv"
 	"syscall"
 	"time"
