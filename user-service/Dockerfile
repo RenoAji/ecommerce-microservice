@@ -9,7 +9,9 @@ WORKDIR /app
 
 # Copy dependency files first (for better caching)
 COPY go.mod go.sum ./
-RUN go mod download
+RUN --mount=type=cache,target=/root/.cache/go-build \
+    --mount=type=cache,target=/go/pkg/mod \
+ go mod download
 
 # Copy the rest of the source code
 COPY . .

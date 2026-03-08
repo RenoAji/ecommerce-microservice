@@ -7,6 +7,7 @@ import (
 
 type Config struct {
 	ServerPort    string
+	GRPCPort      string
 	ConsulAddr    string
 	RedisHost     string
 	RedisPort     string
@@ -23,6 +24,7 @@ type Config struct {
 func LoadConfig() *Config {
 	return &Config{
 		ServerPort:    getEnv("SERVER_PORT", "8081"),
+		GRPCPort:      getEnv("GRPC_PORT", "50051"),
 		ConsulAddr:    getEnv("CONSUL_ADDR", "consul:8500"),
 		RedisHost:     getEnv("REDIS_HOST", "redis"),
 		RedisPort:     getEnv("REDIS_PORT", "6379"),

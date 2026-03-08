@@ -11,6 +11,7 @@ type Config struct {
 	DBPassword     string
 	DBName         string
 	DBPort         string
+	GRPCPort       string
 	ServerPort     string
 	CartSvcAddr    string
 	ProductSvcAddr string
@@ -32,6 +33,7 @@ func LoadConfig() *Config {
 		DBName:         getEnv("DB_NAME", "orders_db"),
 		DBPort:         getEnv("DB_PORT", "5432"),
 		ServerPort:     getEnv("SERVER_PORT", "8081"),
+		GRPCPort:       getEnv("GRPC_PORT", "50051"),
 		ConsulAddr:    getEnv("CONSUL_ADDR", "consul:8500"),
 		RedisBroker: struct{
 			Host     string

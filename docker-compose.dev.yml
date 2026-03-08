@@ -7,35 +7,35 @@ services:
 
   product-service:
     build:
-      dockerfile: product-service/Dockerfile.dev
+      dockerfile: Dockerfile.dev
     volumes:
       - ./product-service:/app
       - ./libs:/libs:ro
 
   cart-service:
     build:
-      dockerfile: cart-service/Dockerfile.dev
+      dockerfile: Dockerfile.dev
     volumes:
       - ./cart-service:/app
       - ./libs:/libs:ro
 
   order-service:
     build:
-      dockerfile: order-service/Dockerfile.dev
+      dockerfile: Dockerfile.dev
     volumes:
       - ./order-service:/app
       - ./libs:/libs:ro
 
   payment-service:
     build:
-      dockerfile: payment-service/Dockerfile.dev
+      dockerfile: Dockerfile.dev
     volumes:
       - ./payment-service:/app
       - ./libs:/libs:ro
 
   delivery-service:
     build:
-      dockerfile: delivery-service/Dockerfile.dev
+      dockerfile: Dockerfile.dev
     volumes:
       - ./delivery-service:/app
       - ./libs:/libs:ro
