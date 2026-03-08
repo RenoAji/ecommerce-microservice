@@ -17,7 +17,6 @@ import (
 	"payment-service/internal/repository"
 	"payment-service/internal/service"
 	"payment-service/internal/worker"
-	"strconv"
 	"syscall"
 	"time"
 
@@ -67,13 +66,12 @@ func main() {
 		log.Fatal("Failed to create Consul client: ", err)
 	}
 
-	port, err := strconv.Atoi(cfg.ServerPort)
-	if err != nil {
-		log.Fatal("Failed to convert ServerPort to int: ", err)
-	}
 	hostname, _ := os.Hostname()
 	serviceID := fmt.Sprintf("payment-service-%s", hostname)
-	consulClient.RegisterService(serviceID, "payment-service", port)
+	err = consulClient.RegisterService(serviceID, "payment-service", "payment-service", cfg.GRPCPort)
+	if err != nil {
+		log.Fatal("Failed to register service with Consul: ", err)
+	}
 	defer consulClient.DeregisterService(serviceID)
 
 	// Redis Client for broker
@@ -88,16 +86,16 @@ func main() {
 	// GRPC Server
 	var grpcServer *grpc.Server
 	go func() {
-		lis, err := net.Listen("tcp", ":50051")
+		lis, err := net.Listen("tcp", ":"+cfg.GRPCPort)
 		if err != nil {
-			log.Fatalf("Failed to listen on port 50051: %v", err)
+			log.Fatalf("Failed to listen on gRPC port %s: %v", cfg.GRPCPort, err)
 		}
 
 		grpcServer = grpc.NewServer(grpc.UnaryInterceptor(middleware.InternalAuthInterceptor))
 		grpcHandler := handler.NewPaymentGRPCServer(svc)
 		pb.RegisterPaymentServiceServer(grpcServer, grpcHandler)
 
-		log.Println("gRPC server starting on port 50051...")
+		log.Println("gRPC server starting on port " + cfg.GRPCPort + "...")
 		if err := grpcServer.Serve(lis); err != nil {
 			log.Printf("gRPC server stopped: %v", err)
 		}

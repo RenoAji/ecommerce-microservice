@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"strconv"
 	"syscall"
 	"time"
 
@@ -67,13 +66,12 @@ func main() {
 		log.Fatal("Failed to create Consul client: ", err)
 	}
 
-	port, err := strconv.Atoi(cfg.ServerPort)
-	if err != nil {
-		log.Fatal("Failed to convert ServerPort to int: ", err)
-	}
 	hostname, _ := os.Hostname()
 	serviceID := fmt.Sprintf("order-service-%s", hostname)
-	consulClient.RegisterService(serviceID, "order-service", port)
+	err = consulClient.RegisterService(serviceID, "order-service", "order-service", cfg.GRPCPort)
+	if err != nil {
+		log.Fatal("Failed to register service with Consul: ", err)
+	}
 	defer consulClient.DeregisterService(serviceID)
 
 	// Set up gRPC connection to Cart Service

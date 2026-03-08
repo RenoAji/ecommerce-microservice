@@ -151,8 +151,10 @@ services:
 
   product-service:
     build:
-      context: .
-      dockerfile: product-service/Dockerfile
+      context: ./product-service
+      dockerfile: Dockerfile
+      additional_contexts:
+        libs: ./libs
     environment:
       DB_HOST: product-db
       DB_PORT: 5432
@@ -175,8 +177,10 @@ services:
 
   cart-service:
     build:
-      context: .
-      dockerfile: cart-service/Dockerfile
+      context: ./cart-service
+      dockerfile: Dockerfile
+      additional_contexts:
+        libs: ./libs
     environment:
       REDIS_HOST: redis
       REDIS_PORT: 6379
@@ -194,8 +198,10 @@ services:
 
   order-service:
     build:
-      context: .
-      dockerfile: order-service/Dockerfile
+      context: ./order-service
+      dockerfile: Dockerfile
+      additional_contexts:
+        libs: ./libs
     environment:
       DB_HOST: order-db
       DB_PORT: 5432
@@ -220,8 +226,10 @@ services:
 
   payment-service:
     build:
-      context: .
-      dockerfile: payment-service/Dockerfile
+      context: ./payment-service
+      dockerfile: Dockerfile
+      additional_contexts:
+        libs: ./libs
     environment:
       DB_HOST: payment-db
       DB_PORT: 5432
@@ -247,8 +255,10 @@ services:
 
   delivery-service:
     build:
-      context: .
-      dockerfile: delivery-service/Dockerfile
+      context: ./delivery-service
+      dockerfile: Dockerfile
+      additional_contexts:
+        libs: ./libs
     environment:
       DB_HOST: delivery-db
       DB_PORT: 5432

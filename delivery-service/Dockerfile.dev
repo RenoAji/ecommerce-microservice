@@ -6,10 +6,13 @@ RUN go install github.com/air-verse/air@v1.61.7
 WORKDIR /app
 
 # Copy dependency files
-COPY delivery-service/go.mod delivery-service/go.sum ./
-COPY libs /libs
-RUN go mod download
-
+COPY go.mod go.sum ./
+COPY --from=libs ./consulclient/go.mod ./consulclient/go.sum ../libs/consulclient/
+COPY --from=libs ./infrastructure/go.mod ./infrastructure/go.sum ../libs/infrastructure/
+COPY --from=libs ./pb/go.mod ./pb/go.sum ../libs/pb/
+RUN --mount=type=cache,target=/root/.cache/go-build \
+    --mount=type=cache,target=/go/pkg/mod \
+ go mod download
 # We don't COPY . . here because we will use Docker Volumes 
 # to sync the code from your Fedora machine to the container.
 

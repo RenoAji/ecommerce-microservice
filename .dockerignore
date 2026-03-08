@@ -1,0 +1,37 @@
+# Git and editor
+.git
+.gitignore
+.vscode
+.idea
+.github/
+
+# OS / temp
+**/.DS_Store
+**/*.swp
+**/*.swo
+**/*~
+
+# Build/test artifacts
+**/tmp
+**/bin
+**/dist
+**/coverage
+**/*.out
+
+# Logs
+**/*.log
+
+# Env and secrets-like local files
+**/.env
+**/.env.*
+
+# Dependency caches
+**/node_modules
+
+# Docker artifacts
+**/.docker
+
+# Ignore docs/media that are not needed for builds
+readme_img
+TESTING.md
+README.md
