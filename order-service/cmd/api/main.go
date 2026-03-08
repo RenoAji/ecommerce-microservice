@@ -138,7 +138,9 @@ func main() {
 			order.POST("", hdl.PostOrder)
 			order.GET("", hdl.GetOrders)
 			order.GET("/:id", hdl.GetOrderByID)
-
+			order.GET("/health", func(c *gin.Context) {
+				c.JSON(http.StatusOK, gin.H{"status": "ok"})
+			})
 		}
 	}
 
