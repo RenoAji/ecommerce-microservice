@@ -2,6 +2,8 @@ package consulclient
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
 
 	"github.com/hashicorp/consul/api"
 )
@@ -22,19 +24,34 @@ func NewConsulClient(address string) (*ConsulClient, error) {
 	return &ConsulClient{Client: client}, nil
 }
 
-func (c *ConsulClient) RegisterService(serviceID, serviceName string, port int) error {
+func (c *ConsulClient) RegisterService(serviceID, serviceName, serviceAddress, port string) error {
+	intPort, err := strconv.Atoi(port)
+	if err != nil {
+		return fmt.Errorf("invalid port number: %w", err)
+	}
+
+	serviceAddress = strings.TrimSpace(serviceAddress)
+	if serviceAddress == "" {
+		serviceAddress = serviceName
+	}
+
     registration := &api.AgentServiceRegistration{
         ID:   serviceID,
         Name: serviceName,
-        Port: port,
+        Address: serviceAddress,
+        Port: intPort,
         Check: &api.AgentServiceCheck{
-            GRPC:                           fmt.Sprintf(":%d", port), 
+			GRPC:                           fmt.Sprintf("%s:%s", serviceAddress, port),
             Interval:                       "10s",
             DeregisterCriticalServiceAfter: "1m",
         },
     }
 
-    return c.Client.Agent().ServiceRegister(registration)
+	if err := c.Client.Agent().ServiceRegister(registration); err != nil {
+		return fmt.Errorf("failed to register service with Consul: %w", err)
+	}
+
+    return nil
 }
 
 func (c *ConsulClient) DeregisterService(serviceID string) error {

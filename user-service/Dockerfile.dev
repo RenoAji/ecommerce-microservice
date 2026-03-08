@@ -7,7 +7,9 @@ WORKDIR /app
 
 # Copy dependency files
 COPY go.mod go.sum ./
-RUN go mod download
+RUN --mount=type=cache,target=/root/.cache/go-build \
+    --mount=type=cache,target=/go/pkg/mod \
+ go mod download
 
 # We don't COPY . . here because we will use Docker Volumes 
 # to sync the code from your Fedora machine to the container.
