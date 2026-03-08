@@ -16,7 +16,7 @@ services:
   # --- PRODUCT SERVICE ---
   product-service:
     build:
-      dockerfile: product-service/Dockerfile
+      dockerfile: Dockerfile
     restart: always
     # No local volumes for production
 
@@ -27,7 +27,7 @@ services:
   # --- CART SERVICE ---
   cart-service:
     build:
-      dockerfile: cart-service/Dockerfile
+      dockerfile: Dockerfile
     restart: always
 
   redis:
@@ -35,11 +35,12 @@ services:
 
   consul:
     restart: always
+    command: ["agent", "-dev", "-log-level=warn"]
 
   # --- ORDER SERVICE ---
   order-service:
     build:
-      dockerfile: order-service/Dockerfile
+      dockerfile: Dockerfile
     restart: always
 
   order-db:
@@ -49,7 +50,7 @@ services:
   # --- PAYMENT SERVICE ---
   payment-service:
     build:
-      dockerfile: payment-service/Dockerfile
+      dockerfile: Dockerfile
     restart: always
 
   payment-db:
@@ -59,7 +60,7 @@ services:
   # --- DELIVERY SERVICE ---
   delivery-service:
     build:
-      dockerfile: delivery-service/Dockerfile
+      dockerfile: Dockerfile
     restart: always
 
   delivery-db:
