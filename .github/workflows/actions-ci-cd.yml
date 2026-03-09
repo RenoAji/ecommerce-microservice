@@ -24,47 +24,31 @@ jobs:
             cart-service:
               - cart-service/**
               - libs/**
+              - proto/**
             order-service:
               - order-service/**
               - libs/**
+              - proto/**
             payment-service:
               - payment-service/**
               - libs/**
+              - proto/**
             product-service:
               - product-service/**
               - libs/**
+              - proto/**
             user-service:
               - user-service/**
               - libs/**
             delivery-service:
               - delivery-service/**
               - libs/**
-
-  grpc:
-    needs: changes
-    if: ${{ needs.changes.outputs.services != '[]' && needs.changes.outputs.services != '' }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-      - name: Install Protoc
-        uses: arduino/setup-protoc@v3
-        with:
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Generate GRPC protocol buffers
-        run: |
-          go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
-          go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
-          echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
-          protoc --go_out=. --go-grpc_out=. proto/product.proto
-          protoc --go_out=. --go-grpc_out=. proto/cart.proto
-          protoc --go_out=. --go-grpc_out=. proto/payment.proto
-          protoc --go_out=. --go-grpc_out=. proto/delivery.proto
+              - proto/**
 
   # JOB to run tests
   test:
     needs:
       - changes
-      - grpc
     if: ${{ needs.changes.outputs.services != '[]' && needs.changes.outputs.services != '' }}
     runs-on: ubuntu-latest
     strategy:
@@ -80,6 +64,19 @@ jobs:
         with:
           go-version: "1.25.x"
           cache-dependency-path: ${{ matrix.service }}/go.sum
+      - name: Install Protoc
+        uses: arduino/setup-protoc@v3
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Generate GRPC protocol buffers
+        run: |
+          go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+          go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+          echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
+          protoc --go_out=. --go-grpc_out=. ../proto/product.proto
+          protoc --go_out=. --go-grpc_out=. ../proto/cart.proto
+          protoc --go_out=. --go-grpc_out=. ../proto/payment.proto
+          protoc --go_out=. --go-grpc_out=. ../proto/delivery.proto
       - name: Install dependencies
         run: go mod download
       - name: Build
