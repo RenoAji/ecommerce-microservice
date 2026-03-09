@@ -34,5 +34,5 @@ tmp/
 **/tmp/
 
 # Generated protobuf code
-**/pb/*.go
-pb/
+libs/pb/*.pb.go
+libs/pb/*.pb.go
