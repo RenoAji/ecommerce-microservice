@@ -126,6 +126,9 @@ func main() {
 		// public routes
 		api.GET("/products", ProductHandler.Get)
 		api.GET("/products/:id", ProductHandler.GetByID)
+		api.GET("/health", func(c *gin.Context) {
+			c.JSON(http.StatusOK, gin.H{"status": "ok"})
+		})
 	}
 
 	// Swagger Documentation Route
