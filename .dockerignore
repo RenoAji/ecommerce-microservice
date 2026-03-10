@@ -24,6 +24,7 @@
 # Env and secrets-like local files
 **/.env
 **/.env.*
+.env
 
 # Dependency caches
 **/node_modules
