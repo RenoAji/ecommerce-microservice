@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"order-service/internal/config"
 	"order-service/internal/domain"
 
 	"gorm.io/driver/postgres"
@@ -19,14 +20,8 @@ import (
 func openOrderTestDB(t *testing.T) *gorm.DB {
 	t.Helper()
 
-	host := getenv("ORDER_DB_HOST_TEST", "localhost")
-	port := getenv("ORDER_DB_PORT_TEST", "5432")
-	user := getenv("ORDER_DB_USER_TEST", "user")
-	password := getenv("ORDER_DB_PASSWORD_TEST", "secretpassword")
-	dbname := getenv("ORDER_DB_NAME_TEST", "order_db_test")
-
-	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", host, port, user, password, dbname)
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	cfg := config.LoadTestConfig()
+	db, err := gorm.Open(postgres.Open(cfg.GetDSN()), &gorm.Config{})
 	if err != nil {
 		t.Skipf("skipping integration test, cannot connect to order-db: %v", err)
 	}

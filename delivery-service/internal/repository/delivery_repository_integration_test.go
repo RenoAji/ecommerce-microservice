@@ -5,11 +5,11 @@ package repository
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"testing"
 	"time"
 
+	"delivery-service/internal/config"
 	"delivery-service/internal/domain"
 
 	"gorm.io/driver/postgres"
@@ -19,14 +19,8 @@ import (
 func openDeliveryTestDB(t *testing.T) *gorm.DB {
 	t.Helper()
 
-	host := getenv("DELIVERY_DB_HOST_TEST", "localhost")
-	port := getenv("DELIVERY_DB_PORT_TEST", "5432")
-	user := getenv("DELIVERY_DB_USER_TEST", "user")
-	password := getenv("DELIVERY_DB_PASSWORD_TEST", "secretpassword")
-	dbname := getenv("DELIVERY_DB_NAME_TEST", "delivery_db_test")
-
-	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", host, port, user, password, dbname)
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	cfg := config.LoadTestConfig()
+	db, err := gorm.Open(postgres.Open(cfg.GetDSN()), &gorm.Config{})
 	if err != nil {
 		t.Skipf("skipping integration test, cannot connect to delivery-db: %v", err)
 	}
