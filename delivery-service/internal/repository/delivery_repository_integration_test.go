@@ -19,11 +19,11 @@ import (
 func openDeliveryTestDB(t *testing.T) *gorm.DB {
 	t.Helper()
 
-	host := getenv("DELIVERY_DB_HOST", "localhost")
-	port := getenv("DELIVERY_DB_PORT", "5436")
-	user := getenv("DB_USER", "user")
-	password := getenv("DB_PASSWORD", "secretpassword")
-	dbname := getenv("DELIVERY_DB_NAME", "delivery_db")
+	host := getenv("DELIVERY_DB_HOST_TEST", "localhost")
+	port := getenv("DELIVERY_DB_PORT_TEST", "5432")
+	user := getenv("DELIVERY_DB_USER_TEST", "user")
+	password := getenv("DELIVERY_DB_PASSWORD_TEST", "secretpassword")
+	dbname := getenv("DELIVERY_DB_NAME_TEST", "delivery_db_test")
 
 	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", host, port, user, password, dbname)
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})

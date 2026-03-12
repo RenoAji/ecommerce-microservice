@@ -44,6 +44,22 @@ func LoadConfig() *Config {
 	}
 }
 
+func LoadTestConfig() *Config {
+	return &Config{
+		RedisBroker: struct {
+			Host     string
+			Port     string
+			Password string
+			DB       int
+		}{
+			Host:     getEnv("TEST_REDIS_HOST", "redis"),
+			Port:     getEnv("TEST_REDIS_PORT", "6379"),
+			Password: getEnv("TEST_REDIS_PASSWORD", ""),
+			DB:       1,
+		},
+	}
+}
+
 func (c *Config) GetRedisAddr() string {
 	return fmt.Sprintf("%s:%s", c.RedisHost, c.RedisPort)
 }

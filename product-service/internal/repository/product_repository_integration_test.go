@@ -5,10 +5,10 @@ package repository
 
 import (
 	"fmt"
-	"os"
 	"testing"
 	"time"
 
+	"product-service/internal/config"
 	"product-service/internal/domain"
 
 	"gorm.io/driver/postgres"
@@ -18,13 +18,8 @@ import (
 func openProductTestDB(t *testing.T) *gorm.DB {
 	t.Helper()
 
-	host := getenv("PRODUCT_DB_HOST", "localhost")
-	port := getenv("PRODUCT_DB_PORT", "5433")
-	user := getenv("DB_USER", "user")
-	password := getenv("DB_PASSWORD", "secretpassword")
-	dbname := getenv("PRODUCT_DB_NAME", "product_db")
-
-	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", host, port, user, password, dbname)
+	cfg := config.LoadTestConfig()
+	dsn := cfg.GetDSN()
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		t.Skipf("skipping integration test, cannot connect to product-db: %v", err)
@@ -33,13 +28,6 @@ func openProductTestDB(t *testing.T) *gorm.DB {
 		t.Fatalf("AutoMigrate() error = %v", err)
 	}
 	return db
-}
-
-func getenv(key, fallback string) string {
-	if value := os.Getenv(key); value != "" {
-		return value
-	}
-	return fallback
 }
 
 func TestProductRepository_CreateAndGet_Integration(t *testing.T) {

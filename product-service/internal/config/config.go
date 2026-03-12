@@ -46,6 +46,27 @@ func LoadConfig() *Config {
 	}
 }
 
+func LoadTestConfig() *Config {
+	return &Config{
+		DBHost:     getEnv("TEST_DB_HOST", "localhost"),
+		DBUser:     getEnv("TEST_DB_USER", "postgres"),
+		DBPassword: getEnv("TEST_DB_PASSWORD", "password"),
+		DBName:     getEnv("TEST_DB_NAME", "products_test_db"),
+		DBPort:     getEnv("TEST_DB_PORT", "5432"),
+		RedisBroker: struct {
+			Host     string
+			Port     string
+			Password string
+			DB       int
+		}{
+			Host:     getEnv("TEST_REDIS_HOST", "redis"),
+			Port:     getEnv("TEST_REDIS_PORT", "6379"),
+			Password: getEnv("TEST_REDIS_PASSWORD", ""),
+			DB:       1,
+		},
+	}
+}
+
 func (c *Config) GetDSN() string {
 	return fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",
 		c.DBHost, c.DBUser, c.DBPassword, c.DBName, c.DBPort)

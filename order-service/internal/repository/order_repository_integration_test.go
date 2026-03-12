@@ -19,11 +19,11 @@ import (
 func openOrderTestDB(t *testing.T) *gorm.DB {
 	t.Helper()
 
-	host := getenv("ORDER_DB_HOST", "localhost")
-	port := getenv("ORDER_DB_PORT", "5434")
-	user := getenv("DB_USER", "user")
-	password := getenv("DB_PASSWORD", "secretpassword")
-	dbname := getenv("ORDER_DB_NAME", "order_db")
+	host := getenv("ORDER_DB_HOST_TEST", "localhost")
+	port := getenv("ORDER_DB_PORT_TEST", "5432")
+	user := getenv("ORDER_DB_USER_TEST", "user")
+	password := getenv("ORDER_DB_PASSWORD_TEST", "secretpassword")
+	dbname := getenv("ORDER_DB_NAME_TEST", "order_db_test")
 
 	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", host, port, user, password, dbname)
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
