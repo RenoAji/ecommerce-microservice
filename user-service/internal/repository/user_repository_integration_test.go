@@ -17,11 +17,11 @@ import (
 func openUserTestDB(t *testing.T) *gorm.DB {
 	t.Helper()
 
-	host := getenv("USER_DB_HOST", "localhost")
-	port := getenv("USER_DB_PORT", "5432")
-	user := getenv("DB_USER", "user")
-	password := getenv("DB_PASSWORD", "secretpassword")
-	dbname := getenv("USER_DB_NAME", "user_db")
+	host := getenv("USER_DB_HOST_TEST", "localhost")
+	port := getenv("USER_DB_PORT_TEST", "5432")
+	user := getenv("USER_DB_USER_TEST", "user")
+	password := getenv("USER_DB_PASSWORD_TEST", "secretpassword")
+	dbname := getenv("USER_DB_NAME_TEST", "user_db_test")
 
 	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", host, port, user, password, dbname)
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})

@@ -5,7 +5,7 @@ import (
 	"os"
 )
 
-type config struct {
+type Config struct {
 	DBHost            string
 	DBUser            string
 	DBPassword        string
@@ -24,8 +24,8 @@ type config struct {
 	}
 }
 
-func LoadConfig() *config {
-	return &config{
+func LoadConfig() *Config {
+	return &Config{
 		DBHost:            getEnv("DB_HOST", "localhost"),
 		DBUser:            getEnv("DB_USER", "postgres"),
 		DBPassword:        getEnv("DB_PASSWORD", "password"),
@@ -50,7 +50,28 @@ func LoadConfig() *config {
 	}
 }
 
-func (c *config) GetDSN() string {
+func LoadTestConfig() *Config {
+	return &Config{
+		DBHost:     getEnv("TEST_DB_HOST", "localhost"),
+		DBUser:     getEnv("TEST_DB_USER", "postgres"),
+		DBPassword: getEnv("TEST_DB_PASSWORD", "password"),
+		DBName:     getEnv("TEST_DB_NAME", "products_test_db"),
+		DBPort:     getEnv("TEST_DB_PORT", "5432"),
+		RedisBroker: struct {
+			Host     string
+			Port     string
+			Password string
+			DB       int
+		}{
+			Host:     getEnv("TEST_REDIS_HOST", "redis"),
+			Port:     getEnv("TEST_REDIS_PORT", "6379"),
+			Password: getEnv("TEST_REDIS_PASSWORD", ""),
+			DB:       1,
+		},
+	}
+}
+
+func (c *Config) GetDSN() string {
 	return "host=" + c.DBHost +
 		" user=" + c.DBUser +
 		" password=" + c.DBPassword +
@@ -66,6 +87,6 @@ func getEnv(key, fallback string) string {
 	return fallback
 }
 
-func (c *config) GetRedisAddr() string {
+func (c *Config) GetRedisAddr() string {
 	return fmt.Sprintf("%s:%s", c.RedisBroker.Host, c.RedisBroker.Port)
 }

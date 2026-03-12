@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"cart-service/internal/config"
 	"cart-service/internal/domain"
 
 	"github.com/redis/go-redis/v9"
@@ -18,11 +19,14 @@ import (
 func openCartRedis(t *testing.T) *redis.Client {
 	t.Helper()
 
-	host := getenv("REDIS_HOST", "localhost")
-	port := getenv("REDIS_PORT", "6379")
-	password := os.Getenv("REDIS_PASSWORD")
+	cfg := config.LoadTestConfig()
 
-	client := redis.NewClient(&redis.Options{Addr: host + ":" + port, Password: password, DB: 0})
+	client := redis.NewClient(&redis.Options{
+		Addr:     cfg.GetRedisBrokerAddr(),
+		Password: cfg.RedisBroker.Password,
+		DB:       cfg.RedisBroker.DB,
+	})
+
 	if err := client.Ping(context.Background()).Err(); err != nil {
 		t.Skipf("skipping integration test, cannot connect to redis: %v", err)
 	}
