@@ -4,11 +4,11 @@
 package repository
 
 import (
-	"fmt"
 	"os"
 	"testing"
 	"time"
 
+	"payment-service/internal/config"
 	"payment-service/internal/domain"
 
 	"gorm.io/driver/postgres"
@@ -18,14 +18,8 @@ import (
 func openPaymentTestDB(t *testing.T) *gorm.DB {
 	t.Helper()
 
-	host := getenv("PAYMENT_DB_HOST_TEST", "localhost")
-	port := getenv("PAYMENT_DB_PORT_TEST", "5432")
-	user := getenv("PAYMENT_DB_USER_TEST", "user")
-	password := getenv("PAYMENT_DB_PASSWORD_TEST", "secretpassword")
-	dbname := getenv("PAYMENT_DB_NAME_TEST", "payment_db_test")
-
-	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", host, port, user, password, dbname)
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	cfg := config.LoadTestConfig()
+	db, err := gorm.Open(postgres.Open(cfg.GetDSN()), &gorm.Config{})
 	if err != nil {
 		t.Skipf("skipping integration test, cannot connect to payment-db: %v", err)
 	}
