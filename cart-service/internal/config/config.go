@@ -52,7 +52,7 @@ func LoadTestConfig() *Config {
 			Password string
 			DB       int
 		}{
-			Host:     getEnv("TEST_REDIS_HOST", "redis"),
+			Host:     getEnv("TEST_REDIS_HOST", "localhost"),
 			Port:     getEnv("TEST_REDIS_PORT", "6379"),
 			Password: getEnv("TEST_REDIS_PASSWORD", ""),
 			DB:       1,

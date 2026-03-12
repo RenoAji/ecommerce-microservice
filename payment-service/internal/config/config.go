@@ -55,7 +55,7 @@ func LoadTestConfig() *Config {
 		DBHost:     getEnv("TEST_DB_HOST", "localhost"),
 		DBUser:     getEnv("TEST_DB_USER", "postgres"),
 		DBPassword: getEnv("TEST_DB_PASSWORD", "password"),
-		DBName:     getEnv("TEST_DB_NAME", "products_test_db"),
+		DBName:     getEnv("TEST_DB_NAME", "testdb"),
 		DBPort:     getEnv("TEST_DB_PORT", "5432"),
 		RedisBroker: struct {
 			Host     string
@@ -63,7 +63,7 @@ func LoadTestConfig() *Config {
 			Password string
 			DB       int
 		}{
-			Host:     getEnv("TEST_REDIS_HOST", "redis"),
+			Host:     getEnv("TEST_REDIS_HOST", "localhost"),
 			Port:     getEnv("TEST_REDIS_PORT", "6379"),
 			Password: getEnv("TEST_REDIS_PASSWORD", ""),
 			DB:       1,
