@@ -1,10 +1,10 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"time"
+	"user-service/internal/config"
 	"user-service/internal/database"
 	"user-service/internal/domain"
 	"user-service/internal/handler"
@@ -41,18 +41,13 @@ import (
 // @description Type "Bearer" followed by a space and JWT token.
 func main() {
 	// Get database settings from environment variables (provided by docker-compose)
-	host := os.Getenv("DB_HOST")
-	user := os.Getenv("DB_USER")
-	password := os.Getenv("DB_PASSWORD")
-	dbname := os.Getenv("DB_NAME")
-	port := os.Getenv("DB_PORT")
+	cfg := config.LoadConfig()
 
-	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable", host, user, password, dbname, port)
 	var db *gorm.DB
 	var err error
 
 	for i := 0; i < 10; i++ {
-		db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
+		db, err = gorm.Open(postgres.Open(cfg.GetDSN()), &gorm.Config{})
 		if err == nil {
 			break
 		}
