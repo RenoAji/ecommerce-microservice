@@ -18,7 +18,7 @@ jobs:
     outputs:
       services: ${{ steps.filter.outputs.changes }} # Services to build
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - uses: dorny/paths-filter@v3
