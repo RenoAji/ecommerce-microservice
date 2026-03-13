@@ -8,6 +8,9 @@ on:
     branches:
       - main
 
+env:
+  REGISTRY: ghcr.io
+
 jobs:
   # JOB to run change detection
   changes:
@@ -24,7 +27,7 @@ jobs:
       - uses: dorny/paths-filter@v3
         id: filter
         with:
-          base: ${{ github.ref == 'refs/heads/main' && github.event.before || '' }}
+          base: ${{ github.event_name == 'pull_request' && github.base_ref || (github.ref == 'refs/heads/main' && github.event.before || '') }}
           filters: |
             cart-service:
               - cart-service/**
@@ -120,7 +123,7 @@ jobs:
     needs:
       - changes
       - test
-    if: ${{ needs.changes.outputs.services != '[]' && needs.changes.outputs.services != '' }}
+    if: ${{ needs.changes.outputs.services != '[]' && needs.changes.outputs.services != '' && github.ref == 'refs/heads/main'}}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -129,9 +132,15 @@ jobs:
       matrix:
         service: ${{ fromJson(needs.changes.outputs.services) }}
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
-
+      - uses: actions/checkout@v5
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.25.x"
+      - name: Install Protoc
+        uses: arduino/setup-protoc@v3
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Generate GRPC protocol buffers
         run: |
           go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
@@ -141,15 +150,25 @@ jobs:
           protoc --go_out=. --go-grpc_out=. proto/cart.proto
           protoc --go_out=. --go-grpc_out=. proto/payment.proto
           protoc --go_out=. --go-grpc_out=. proto/delivery.proto
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v2
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
         with:
-          registry: ghcr.io
+          registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v3
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
         with:
-          context: ./${{ matrix.service }}
+          images: ${{ env.REGISTRY }}/${{ github.repository }}/${{ matrix.service }}
+
+      - name: Build and push Docker image
+        id: push
+        uses: docker/build-push-action@f2a1d5e99d037542a71f64918e516c093c6f3fc4
+        with:
+          context: .
           push: true
-          tags: ghcr.io/${{ github.repository_owner }}/${{ matrix.service }}:latest
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
