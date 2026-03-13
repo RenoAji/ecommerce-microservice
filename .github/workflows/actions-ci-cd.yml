@@ -33,25 +33,31 @@ jobs:
               - cart-service/**
               - libs/**
               - proto/**
+              - .github/workflows/actions-ci-cd.yml
             order-service:
               - order-service/**
               - libs/**
               - proto/**
+              - .github/workflows/actions-ci-cd.yml
             payment-service:
               - payment-service/**
               - libs/**
               - proto/**
+              - .github/workflows/actions-ci-cd.yml
             product-service:
               - product-service/**
               - libs/**
               - proto/**
+              - .github/workflows/actions-ci-cd.yml
             user-service:
               - user-service/**
               - libs/**
+              - .github/workflows/actions-ci-cd.yml
             delivery-service:
               - delivery-service/**
               - libs/**
               - proto/**
+              - .github/workflows/actions-ci-cd.yml
 
   # JOB to run tests
   test:
@@ -168,7 +174,8 @@ jobs:
         id: push
         uses: docker/build-push-action@f2a1d5e99d037542a71f64918e516c093c6f3fc4
         with:
-          context: .
+          context: ./${{ matrix.service }}
+          file: ./${{ matrix.service }}/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
