@@ -5,8 +5,7 @@ services:
 
   # --- USER SERVICE ---
   user-service:
-    build:
-      dockerfile: Dockerfile # Points to the optimized Multi-stage Dockerfile
+    image: ghcr.io/renoaji/ecommerce-microservice/user-service:main
     restart: always
 
   user-db:
@@ -15,8 +14,7 @@ services:
 
   # --- PRODUCT SERVICE ---
   product-service:
-    build:
-      dockerfile: Dockerfile
+    image: ghcr.io/renoaji/ecommerce-microservice/product-service:main
     restart: always
     # No local volumes for small image
 
@@ -26,8 +24,7 @@ services:
 
   # --- CART SERVICE ---
   cart-service:
-    build:
-      dockerfile: Dockerfile
+    image: ghcr.io/renoaji/ecommerce-microservice/cart-service:main
     restart: always
 
   redis:
@@ -35,12 +32,11 @@ services:
 
   consul:
     restart: always
-    command: ["agent", "-dev", "-log-level=warn"]
+    command: ["agent", "-dev", "-log-level=warn", "-client=0.0.0.0"]
 
   # --- ORDER SERVICE ---
   order-service:
-    build:
-      dockerfile: Dockerfile
+    image: ghcr.io/renoaji/ecommerce-microservice/order-service:main
     restart: always
 
   order-db:
@@ -49,8 +45,7 @@ services:
 
   # --- PAYMENT SERVICE ---
   payment-service:
-    build:
-      dockerfile: Dockerfile
+    image: ghcr.io/renoaji/ecommerce-microservice/payment-service:main
     restart: always
 
   payment-db:
@@ -59,8 +54,7 @@ services:
 
   # --- DELIVERY SERVICE ---
   delivery-service:
-    build:
-      dockerfile: Dockerfile
+    image: ghcr.io/renoaji/ecommerce-microservice/delivery-service:main
     restart: always
 
   delivery-db:
