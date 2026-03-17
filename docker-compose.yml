@@ -14,13 +14,17 @@ services:
     image: postgres:15-alpine
     container_name: user-db
     environment:
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_DB: ${USER_DB_NAME}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${USER_DB_NAME:-user_db}
     ports:
       - "${USER_DB_PORT:-5432}:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${USER_DB_NAME}"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${DB_USER:-postgres} -d ${USER_DB_NAME:-user_db}",
+        ]
       interval: 5s
       timeout: 5s
     networks:
@@ -32,13 +36,17 @@ services:
     image: postgres:15-alpine
     container_name: product-db
     environment:
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_DB: ${PRODUCT_DB_NAME}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${PRODUCT_DB_NAME:-product_db}
     ports:
       - "${PRODUCT_DB_PORT:-5433}:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${PRODUCT_DB_NAME}"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${DB_USER:-postgres} -d ${PRODUCT_DB_NAME:-product_db}",
+        ]
       interval: 5s
       timeout: 5s
     networks:
@@ -78,13 +86,17 @@ services:
     image: postgres:15-alpine
     container_name: order-db
     environment:
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_DB: ${ORDER_DB_NAME}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${ORDER_DB_NAME:-order_db}
     ports:
       - "${ORDER_DB_PORT:-5434}:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${ORDER_DB_NAME}"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${DB_USER:-postgres} -d ${ORDER_DB_NAME:-order_db}",
+        ]
       interval: 5s
       timeout: 5s
     networks:
@@ -96,13 +108,17 @@ services:
     image: postgres:15-alpine
     container_name: payment-db
     environment:
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_DB: ${PAYMENT_DB_NAME}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${PAYMENT_DB_NAME:-payment_db}
     ports:
       - "${PAYMENT_DB_PORT:-5435}:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${PAYMENT_DB_NAME}"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${DB_USER:-postgres} -d ${PAYMENT_DB_NAME:-payment_db}",
+        ]
       interval: 5s
       timeout: 5s
     networks:
@@ -114,8 +130,8 @@ services:
     image: postgres:15-alpine
     container_name: delivery-db
     environment:
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
       POSTGRES_DB: ${DELIVERY_DB_NAME:-delivery_db}
     ports:
       - "${DELIVERY_DB_PORT:-5436}:5432"
@@ -123,7 +139,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "pg_isready -U ${DB_USER} -d ${DELIVERY_DB_NAME:-delivery_db}",
+          "pg_isready -U ${DB_USER:-postgres} -d ${DELIVERY_DB_NAME:-delivery_db}",
         ]
       interval: 5s
       timeout: 5s
@@ -139,10 +155,10 @@ services:
     environment:
       DB_HOST: user-db
       DB_PORT: 5432
-      DB_USER: ${DB_USER}
-      DB_PASSWORD: ${DB_PASSWORD}
-      DB_NAME: ${USER_DB_NAME}
-      JWT_SECRET: ${JWT_SECRET}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      DB_NAME: ${USER_DB_NAME:-user_db}
+      JWT_SECRET: ${JWT_SECRET:-dev_jwt_secret}
     depends_on:
       user-db:
         condition: service_healthy
@@ -158,11 +174,11 @@ services:
     environment:
       DB_HOST: product-db
       DB_PORT: 5432
-      DB_USER: ${DB_USER}
-      DB_PASSWORD: ${DB_PASSWORD}
-      DB_NAME: ${PRODUCT_DB_NAME}
-      JWT_SECRET: ${JWT_SECRET}
-      INTERNAL_SECRET: ${INTERNAL_SERVICE_SECRET}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      DB_NAME: ${PRODUCT_DB_NAME:-product_db}
+      JWT_SECRET: ${JWT_SECRET:-dev_jwt_secret}
+      INTERNAL_SECRET: ${INTERNAL_SERVICE_SECRET:-dev_internal_secret}
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:-""}
@@ -185,8 +201,8 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:-""}
-      JWT_SECRET: ${JWT_SECRET}
-      INTERNAL_SECRET: ${INTERNAL_SERVICE_SECRET}
+      JWT_SECRET: ${JWT_SECRET:-dev_jwt_secret}
+      INTERNAL_SECRET: ${INTERNAL_SERVICE_SECRET:-dev_internal_secret}
       CONSUL_ADDR: consul:8500
     depends_on:
       redis:
@@ -205,11 +221,11 @@ services:
     environment:
       DB_HOST: order-db
       DB_PORT: 5432
-      DB_USER: ${DB_USER}
-      DB_PASSWORD: ${DB_PASSWORD}
-      DB_NAME: ${ORDER_DB_NAME}
-      JWT_SECRET: ${JWT_SECRET}
-      INTERNAL_SECRET: ${INTERNAL_SERVICE_SECRET}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      DB_NAME: ${ORDER_DB_NAME:-order_db}
+      JWT_SECRET: ${JWT_SECRET:-dev_jwt_secret}
+      INTERNAL_SECRET: ${INTERNAL_SERVICE_SECRET:-dev_internal_secret}
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:-""}
@@ -233,12 +249,12 @@ services:
     environment:
       DB_HOST: payment-db
       DB_PORT: 5432
-      DB_USER: ${DB_USER}
-      DB_PASSWORD: ${DB_PASSWORD}
-      DB_NAME: ${PAYMENT_DB_NAME}
-      INTERNAL_SECRET: ${INTERNAL_SERVICE_SECRET}
-      MIDTRANS_SERVER_KEY: ${MIDTRANS_SERVER_KEY}
-      MIDTRANS_CLIENT_KEY: ${MIDTRANS_CLIENT_KEY}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      DB_NAME: ${PAYMENT_DB_NAME:-payment_db}
+      INTERNAL_SECRET: ${INTERNAL_SERVICE_SECRET:-dev_internal_secret}
+      MIDTRANS_SERVER_KEY: ${MIDTRANS_SERVER_KEY:-""}
+      MIDTRANS_CLIENT_KEY: ${MIDTRANS_CLIENT_KEY:-""}
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:-""}
@@ -262,12 +278,12 @@ services:
     environment:
       DB_HOST: delivery-db
       DB_PORT: 5432
-      DB_USER: ${DB_USER}
-      DB_PASSWORD: ${DB_PASSWORD}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
       DB_NAME: ${DELIVERY_DB_NAME:-delivery_db}
       SERVER_PORT: 8081
-      JWT_SECRET: ${JWT_SECRET}
-      INTERNAL_SECRET: ${INTERNAL_SERVICE_SECRET}
+      JWT_SECRET: ${JWT_SECRET:-dev_jwt_secret}
+      INTERNAL_SECRET: ${INTERNAL_SERVICE_SECRET:-dev_internal_secret}
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:-""}
