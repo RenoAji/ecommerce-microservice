@@ -160,9 +160,12 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-
+  deploy:
+    needs: pipeline
+    if: ${{ inputs.run_build_push && needs.pipeline.result == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
       - name: Azure login
-        if: ${{ inputs.run_build_push }}
         uses: azure/login@v3
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
@@ -174,11 +177,12 @@ jobs:
           azcliversion: latest
           inlineScript: |
             DEPLOY_SCRIPT="
-              docker login ${{env.REGISTRY}} -u \$USER -p \$PASS
-              docker compose pull
+              cd /home/septareno/app
+              echo '${{ secrets.GITHUB_TOKEN }}' | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
+              docker compose -f docker-compose.yml -f docker-compose.azure.yml pull
               docker compose -f docker-compose.yml -f docker-compose.azure.yml up -d
               docker image prune -f
-            "
+              "
             az vm start --resource-group ${{secrets.VM_GROUP}} --name ${{secrets.VM_NAME}}   
             # Execute via Azure CLI
             az vm run-command invoke \
