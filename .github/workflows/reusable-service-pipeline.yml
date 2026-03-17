@@ -165,9 +165,7 @@ jobs:
     if: ${{ inputs.run_build_push && needs.pipeline.result == 'success' }}
     runs-on: ubuntu-latest
     permissions:
-      contents: read
-      pull-requests: read
-      packages: write
+      id-token: write
     steps:
       - name: Azure login
         uses: azure/login@v3
