@@ -168,17 +168,6 @@ jobs:
       id-token: write
       contents: read
     steps:
-      - name: Print OIDC token claims
-        run: |
-          TOKEN=$(curl -s -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
-            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=api://AzureADTokenExchange")
-          echo $TOKEN | python3 -c "
-          import sys, json, base64
-          token = json.load(sys.stdin)['value']
-          payload = token.split('.')[1]
-          payload += '=' * (4 - len(payload) % 4)
-          print(json.dumps(json.loads(base64.b64decode(payload)), indent=2))
-          "
       - name: Azure login
         uses: azure/login@v3
         with:
@@ -197,12 +186,8 @@ jobs:
               docker compose -f docker-compose.yml -f docker-compose.azure.yml up -d
               docker image prune -f
               "
-            az role assignment create \
-            --assignee "${{ secrets.AZURE_CLIENT_ID }}" \
-            --role "Virtual Machine Contributor" \
-            --scope "/subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/${{ secrets.VM_GROUP }}"
-                      az account show
-                      az vm start --resource-group ${{secrets.VM_GROUP}} --name ${{secrets.VM_NAME}}   
+            az account show
+            az vm start --resource-group ${{secrets.VM_GROUP}} --name ${{secrets.VM_NAME}}   
             # Execute via Azure CLI
             az vm run-command invoke \
               -g ${{secrets.VM_GROUP}} \
