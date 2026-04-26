@@ -86,10 +86,16 @@ func (r *PostgresRepository) WithTransaction(ctx context.Context, fn func(repo D
 }
 
 func (r *PostgresRepository) CreateOutboxMessage(ctx context.Context, eventType string, payload *domain.Delivery) error {
+	correlationID := payload.CorrelationID
+	if correlationID == "" {
+		correlationID = correlationIDFromContext(ctx)
+	}
+
 	outbox := &domain.DeliveryOutboxMessage{
-		Status:    eventType,
-		DeliveryID: payload.ID,
-		OrderID: payload.OrderID,
+		Status:        eventType,
+		DeliveryID:    payload.ID,
+		OrderID:       payload.OrderID,
+		CorrelationID: correlationID,
 	}
 	return r.db.WithContext(ctx).Create(outbox).Error
 }
@@ -104,4 +110,16 @@ func (r *PostgresRepository) GetPendingOutboxMessages(ctx context.Context) ([]*d
 
 func (r *PostgresRepository) MarkOutboxMessageAsPublished(ctx context.Context, id uint) error {
 	return r.db.Model(&domain.DeliveryOutboxMessage{}).Where("id = ?", id).Update("published", true).Error
+}
+
+func correlationIDFromContext(ctx context.Context) string {
+	if ctx == nil {
+		return ""
+	}
+
+	if correlationID, ok := ctx.Value("correlation_id").(string); ok {
+		return correlationID
+	}
+
+	return ""
 }

@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"log"
 	"order-service/internal/domain"
 	"order-service/internal/service"
 
@@ -43,7 +42,7 @@ func (h *OrderHandler) PostOrder(c *gin.Context) {
 	orderID, err := h.orderService.CreateOrder(&req, ctx, userID)
 
 	if err != nil {
-		log.Printf("ERROR creating order: %v", err)
+		c.Error(err)
 		c.JSON(500, gin.H{"error": "Failed to create order"})
 		return
 	}
@@ -70,7 +69,7 @@ func (h *OrderHandler) GetOrders(c *gin.Context) {
 
 	orders, err := h.orderService.GetOrders(ctx, userID, status)
 	if err != nil {
-		log.Printf("ERROR retrieving orders: %v", err)
+		c.Error(err)
 		c.JSON(500, gin.H{"error": "Failed to retrieve orders"})
 		return
 	}
@@ -97,8 +96,8 @@ func (h *OrderHandler) GetOrderByID(c *gin.Context) {
 
 	order, err := h.orderService.GetOrderByID(ctx, orderID)
 	if err != nil {
-		log.Println("Error retrieving order:", err)
-		
+		c.Error(err)
+
 		// Check if it's a record not found error
 		if err == gorm.ErrRecordNotFound {
 			c.JSON(404, gin.H{"error": "Order not found"})

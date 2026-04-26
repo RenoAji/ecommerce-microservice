@@ -3,14 +3,13 @@ package service
 import (
 	"context"
 	"fmt"
+	"libs/logger"
 	"libs/pb"
-	"log"
 	"order-service/internal/domain"
 	"order-service/internal/repository"
-	"os"
 	"strconv"
 
-	"google.golang.org/grpc/metadata"
+	"go.uber.org/zap"
 )
 
 type OrderService struct {
@@ -26,9 +25,7 @@ func NewOrderService(repo repository.OrderRepository, eventRepo repository.Order
 }
 
 func (s *OrderService) CreateOrder(req *domain.CreateOrderRequest, ctx context.Context, userID uint) (uint, error) {
-	md := metadata.Pairs("authorization", "Bearer "+os.Getenv("INTERNAL_SECRET"))
-	ctx = metadata.NewOutgoingContext(ctx, md)
-
+	l := logger.ForContext(ctx)
 	// Fetch cart (entire or specific items)
 	var cartItems []*pb.CartItem
 	userIDStr := strconv.FormatUint(uint64(userID), 10)
@@ -47,6 +44,7 @@ func (s *OrderService) CreateOrder(req *domain.CreateOrderRequest, ctx context.C
 		})
 
 		if err != nil {
+			l.Error("failed to fetch cart items", zap.Error(err))
 			return 0, fmt.Errorf("failed to fetch cart items: %w", err)
 		}
 
@@ -61,15 +59,10 @@ func (s *OrderService) CreateOrder(req *domain.CreateOrderRequest, ctx context.C
 			UserId: userIDStr,
 		})
 		if err != nil {
+			l.Error("failed to fetch cart", zap.Error(err))
 			return 0, fmt.Errorf("failed to fetch cart: %w", err)
 		}
 		cartItems = cartResp.Items
-
-		// Extract all product IDs for clearing
-		// productIDs = make([]uint32, len(cartItems))
-		// for i, item := range cartItems {
-		//     productIDs[i] = item.ProductId
-		// }
 	}
 
 	// Validate cart not empty
@@ -86,6 +79,7 @@ func (s *OrderService) CreateOrder(req *domain.CreateOrderRequest, ctx context.C
 		// fetch price from product service to ensure latest price
 		productResp, err := s.productClient.GetProduct(ctx, &pb.GetProductRequest{Id: cartItem.ProductId})
 		if err != nil {
+			l.Error("failed to fetch product details", zap.Error(err))
 			return 0, fmt.Errorf("failed to fetch product details: %w", err)
 		}
 
@@ -107,25 +101,30 @@ func (s *OrderService) CreateOrder(req *domain.CreateOrderRequest, ctx context.C
 
 	// Save order to database
 	if err := s.repo.AddOrder(ctx, order); err != nil {
+		l.Error("failed to create order", zap.Error(err))
 		return 0, fmt.Errorf("failed to create order: %w", err)
 	}
-	log.Printf("Order %d created successfully", order.ID)
+	l.Info("Order created successfully",
+		zap.Uint("orderID", order.ID), zap.Uint("userID", userID), zap.Uint("totalAmount", totalAmt))
 
 	// Publish order created event
 	if err := s.eventRepo.PublishOrderCreatedEvent(ctx, &domain.OrderEvent{
-		OrderID:     strconv.FormatUint(uint64(order.ID), 10),
-		UserID:      userIDStr,
-		TotalAmount: order.TotalAmount,
-		Items:       domain.ConvertToOrderItemMessages(order.Items),
+		OrderID:       strconv.FormatUint(uint64(order.ID), 10),
+		UserID:        userIDStr,
+		TotalAmount:   order.TotalAmount,
+		Items:         domain.ConvertToOrderItemMessages(order.Items),
+		CorrelationID: correlationIDFromContext(ctx),
 	}); err != nil {
+		l.Error("failed to publish order created event", zap.Error(err))
 		return 0, fmt.Errorf("failed to publish order created event: %w", err)
 	}
-	log.Println("Order Event Created")
+	l.Info("Order Event Created", zap.String("orderID", strconv.FormatUint(uint64(order.ID), 10)))
 
 	return order.ID, nil
 }
 
 func (s *OrderService) GetOrders(ctx context.Context, userID uint, status string) ([]domain.Order, error) {
+	l := logger.ForContext(ctx)
 	if status != "" {
 		// validate status
 		validStatuses := map[string]bool{
@@ -141,79 +140,127 @@ func (s *OrderService) GetOrders(ctx context.Context, userID uint, status string
 			return nil, fmt.Errorf("invalid order status: %s", status)
 		}
 	}
-	return s.repo.GetOrders(ctx, userID, status)
+
+	orders, err := s.repo.GetOrders(ctx, userID, status)
+	if err != nil {
+		l.Error("failed to get orders", zap.Error(err))
+		return nil, fmt.Errorf("failed to get orders: %w", err)
+	}
+
+	l.Info("Orders retrieved successfully", zap.Uint("userID", userID), zap.String("order_status", status), zap.Int("count", len(orders)))
+	return orders, nil
 }
 
 func (s *OrderService) GetOrderByID(ctx context.Context, orderID string) (*domain.Order, error) {
-	return s.repo.GetOrderByID(ctx, orderID)
+	l := logger.ForContext(ctx)
+	order, err := s.repo.GetOrderByID(ctx, orderID)
+	if err != nil {
+		l.Error("failed to get order by id", zap.Error(err))
+		return nil, fmt.Errorf("failed to get order by id: %w", err)
+	}
+
+	l.Info("Order retrieved successfully", zap.String("orderID", orderID))
+	return order, nil
 }
 
 func (s *OrderService) UpdateOrderStatus(ctx context.Context, orderID string, status string) error {
-	return s.repo.UpdateOrderStatus(ctx, orderID, status)
+	l := logger.ForContext(ctx)
+	err := s.repo.UpdateOrderStatus(ctx, orderID, status)
+	if err != nil {
+		l.Error("failed to update order status", zap.Error(err))
+		return fmt.Errorf("failed to update order status: %w", err)
+	}
+
+	l.Info("Order status updated", zap.String("orderID", orderID), zap.String("order_status", status))
+
+	return nil
 }
 
 func (s *OrderService) UpdateOrderToPaid(ctx context.Context, orderID string) error {
+	l := logger.ForContext(ctx)
 	// Update order status to PAID
 	err := s.repo.UpdateOrderStatus(ctx, orderID, "PAID")
 	if err != nil {
+		l.Error("failed to update order status", zap.Error(err))
 		return fmt.Errorf("failed to update order status: %w", err)
 	}
-	log.Printf("Order %s marked as PAID.", orderID)
+	l.Info("Order marked as PAID", zap.String("orderID", orderID))
 
 	// Publish order paid event
 	order, err := s.repo.GetOrderByID(ctx, orderID)
 	if err != nil {
+		l.Error("failed to get order for event publishing", zap.Error(err))
 		return fmt.Errorf("failed to get order for event publishing: %w", err)
 	}
 
 	userIDStr := strconv.FormatUint(uint64(order.UserID), 10)
 	if err := s.eventRepo.PublishOrderPaidEvent(ctx, &domain.OrderEvent{
-		OrderID:     orderID,
-		UserID:      userIDStr,
-		TotalAmount: order.TotalAmount,
-		Items:       domain.ConvertToOrderItemMessages(order.Items),
+		OrderID:       orderID,
+		UserID:        userIDStr,
+		TotalAmount:   order.TotalAmount,
+		Items:         domain.ConvertToOrderItemMessages(order.Items),
+		CorrelationID: correlationIDFromContext(ctx),
 	}); err != nil {
+		l.Error("failed to publish order paid event", zap.Error(err))
 		return fmt.Errorf("failed to publish order paid event: %w", err)
 	}
-	log.Println("Order Event Paid")
+	l.Info("Order Paid Event Sent", zap.String("orderID", orderID))
 
 	return nil
 }
 
 func (s *OrderService) ProcessAwaitingPaymentOrders(ctx context.Context, orderID string) error {
+	l := logger.ForContext(ctx)
 	// Get order details to fetch the total amount
-	// log.Printf("Processing payment for order %s", orderID)
 	order, err := s.repo.GetOrderByID(ctx, orderID)
 	if err != nil {
+		l.Error("failed to get order", zap.Error(err))
 		return fmt.Errorf("failed to get order: %w", err)
 	}
 
-	// Create metadata for internal gRPC call
-	md := metadata.Pairs("authorization", "Bearer "+os.Getenv("INTERNAL_SECRET"))
-	ctx = metadata.NewOutgoingContext(ctx, md)
-
 	// Call payment service to get payment URL
-	orderIDUint, _ := strconv.ParseUint(orderID, 10, 32)
+	orderIDUint, err := strconv.ParseUint(orderID, 10, 32)
+	if err != nil {
+		l.Error("invalid order id format", zap.Error(err))
+		return fmt.Errorf("invalid order id format: %w", err)
+	}
+
 	paymentResp, err := s.paymentClient.GetPaymentURL(ctx, &pb.GetPaymentRequest{
 		OrderId: uint32(orderIDUint),
 		Amount:  uint64(order.TotalAmount),
 	})
 	if err != nil {
+		l.Error("failed to get payment URL", zap.Error(err))
 		return fmt.Errorf("failed to get payment URL: %w", err)
 	}
 
-	log.Printf("Payment URL generated for order %s: %s", orderID, paymentResp.PaymentUrl)
+	l.Info("Payment URL generated for order", zap.String("orderID", orderID), zap.String("paymentUrl", paymentResp.PaymentUrl))
 
 	// Update order status to awaiting payment
 	err = s.repo.UpdateOrderStatus(ctx, orderID, "AWAITING_PAYMENT")
 	if err != nil {
+		l.Error("failed to update order status", zap.Error(err))
 		return fmt.Errorf("failed to update order status: %w", err)
 	}
 
 	err = s.repo.UpdatePaymentUrl(ctx, orderID, paymentResp.PaymentUrl)
 	if err != nil {
+		l.Error("failed to update order payment info", zap.Error(err))
 		return fmt.Errorf("failed to update order payment info: %w", err)
 	}
 
+	l.Info("Order payment info updated", zap.String("orderID", orderID))
 	return nil
+}
+
+func correlationIDFromContext(ctx context.Context) string {
+	if ctx == nil {
+		return ""
+	}
+
+	if correlationID, ok := ctx.Value("correlation_id").(string); ok {
+		return correlationID
+	}
+
+	return ""
 }

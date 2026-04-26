@@ -13,6 +13,7 @@ type Config struct {
 	DBPort      string
 	ServerPort  string
 	GRPCPort    string
+	Environment string
 	ConsulAddr  string
 	RedisBroker struct {
 		Host     string
@@ -24,14 +25,15 @@ type Config struct {
 
 func LoadConfig() *Config {
 	return &Config{
-		DBHost:     getEnv("DB_HOST", "localhost"),
-		DBUser:     getEnv("DB_USER", "postgres"),
-		DBPassword: getEnv("DB_PASSWORD", "password"),
-		DBName:     getEnv("DB_NAME", "products_db"),
-		DBPort:     getEnv("DB_PORT", "5432"),
-		ServerPort: getEnv("SERVER_PORT", "8081"),
-		GRPCPort:   getEnv("GRPC_PORT", "50051"),
-		ConsulAddr: getEnv("CONSUL_ADDR", "consul:8500"),
+		DBHost:      getEnv("DB_HOST", "localhost"),
+		DBUser:      getEnv("DB_USER", "postgres"),
+		DBPassword:  getEnv("DB_PASSWORD", "password"),
+		DBName:      getEnv("DB_NAME", "products_db"),
+		DBPort:      getEnv("DB_PORT", "5432"),
+		ServerPort:  getEnv("SERVER_PORT", "8081"),
+		GRPCPort:    getEnv("GRPC_PORT", "50051"),
+		Environment: getEnv("ENVIRONMENT", "development"),
+		ConsulAddr:  getEnv("CONSUL_ADDR", "consul:8500"),
 		RedisBroker: struct {
 			Host     string
 			Port     string

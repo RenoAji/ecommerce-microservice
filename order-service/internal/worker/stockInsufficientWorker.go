@@ -2,11 +2,12 @@ package worker
 
 import (
 	"context"
-	"log"
+	"libs/logger"
 	"order-service/internal/infrastructure"
 	"order-service/internal/service"
 
 	"github.com/redis/go-redis/v9"
+	"go.uber.org/zap"
 )
 
 type StockInsufficientWorker struct {
@@ -25,14 +26,10 @@ func (d *StockInsufficientWorker) ListenForStockInsufficient(ctx context.Context
 	d.w.ListenForEvents(ctx, func(ctx context.Context, msg redis.XMessage) error {
 		orderIDStr, ok := msg.Values["order_id"].(string)
 		if !ok {
+			logger.Log.Warn("dropping invalid stock insufficient message: missing order_id",
+				zap.Any("raw_values", msg.Values))
 			return nil
 		}
-		err := d.s.UpdateOrderStatus(ctx, orderIDStr, "CANCELLED")
-		if err != nil {
-			log.Printf("Failed to cancel order %s due to insufficient stock: %v", orderIDStr, err)
-			return err
-		}
-		log.Printf("Order %s cancelled due to insufficient stock", orderIDStr)
-		return nil
+		return d.s.UpdateOrderStatus(ctx, orderIDStr, "CANCELLED")
 	})
 }

@@ -5,10 +5,12 @@ import (
 	"cart-service/internal/service"
 	"context"
 	"encoding/json"
-	"log"
+	"fmt"
+	"libs/logger"
 	"strconv"
 
 	"github.com/redis/go-redis/v9"
+	"go.uber.org/zap"
 )
 
 type orderItemMessage struct {
@@ -32,20 +34,30 @@ func (d *OrderPaidWorker) Listen(ctx context.Context) {
 	d.w.ListenForEvents(ctx, func(ctx context.Context, msg redis.XMessage) error {
 		userIDStr, ok := msg.Values["user_id"].(string)
 		if !ok {
+			logger.Log.Warn("dropping invalid order paid message: missing user_id",
+				zap.Any("raw_values", msg.Values),
+			)
 			return nil
 		}
 		userID, err := strconv.ParseUint(userIDStr, 10, 64)
 		if err != nil {
+			logger.Log.Warn("dropping invalid order paid message: invalid user_id",
+				zap.String("userID", userIDStr),
+				zap.Any("raw_values", msg.Values),
+			)
 			return nil
 		}
 
 		itemsStr, ok := msg.Values["items"].(string)
 		if !ok {
+			logger.Log.Warn("dropping invalid order paid message: missing items",
+				zap.Any("raw_values", msg.Values),
+			)
 			return nil
 		}
 		var items []orderItemMessage
 		if err := json.Unmarshal([]byte(itemsStr), &items); err != nil {
-			return err
+			return fmt.Errorf("failed to unmarshal order items: %w", err)
 		}
 
 		productIDs := make([]uint, 0, len(items))
@@ -56,8 +68,6 @@ func (d *OrderPaidWorker) Listen(ctx context.Context) {
 		if err := d.s.RemoveCartItems(ctx, uint(userID), productIDs); err != nil {
 			return err
 		}
-
-		log.Printf("Info: Removed %d ordered item(s) from cart for user %s after order paid.", len(productIDs), userIDStr)
 		return nil
 	})
 }

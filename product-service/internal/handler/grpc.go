@@ -20,7 +20,7 @@ func NewProductGRPCServer(service *service.ProductService) *ProductGRPCServer {
 func (s *ProductGRPCServer) GetProduct(ctx context.Context, req *pb.GetProductRequest) (*pb.ProductResponse, error) {
 	// 1. Call your existing business logic
 	id := uint64(req.Id)
-	p, err := s.service.GetProductByID(uint(id))
+	p, err := s.service.GetProductByID(ctx, uint(id))
 	if err != nil {
 		return nil, status.Errorf(codes.NotFound, "product not found")
 	}
@@ -37,7 +37,7 @@ func (s *ProductGRPCServer) UpdateStock(ctx context.Context, req *pb.UpdateStock
 	// 1. Call your existing business logic
 	id := uint(req.Id)
 
-	err := s.service.AddStock(id, int(req.Add))
+	err := s.service.AddStock(ctx, id, int(req.Add))
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "could not update stock")
 	}

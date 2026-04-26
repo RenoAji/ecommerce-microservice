@@ -37,9 +37,12 @@ proto-delivery:
 proto: proto-product proto-cart proto-payment proto-delivery
 
 .PHONY: proto proto-product proto-cart proto-payment proto-delivery
+
+
 # Run all services
 up:
-	docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+	go work vendor
+	docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build -d
 
 .PHONY: up
 
@@ -70,3 +73,11 @@ test-integration:
 test-all: test-unit test-integration
 
 .PHONY: test-unit test-integration test-all
+
+# go mod tidy for all services
+tidy:
+	@set -e; \
+	for svc in $(SERVICES); do \
+		echo "==> Running go mod tidy: $$svc"; \
+		(cd $$svc && go mod tidy); \
+	done

@@ -41,8 +41,8 @@ func (c *ConsulClient) RegisterService(serviceID, serviceName, serviceAddress, p
         Address: serviceAddress,
         Port: intPort,
         Check: &api.AgentServiceCheck{
-			GRPC:                           fmt.Sprintf("%s:%s", serviceAddress, port),
-            Interval:                       "10s",
+			HTTP:                           fmt.Sprintf("http://%s:8081/api/v1/health", serviceAddress),
+            Interval:                       "30s",
             DeregisterCriticalServiceAfter: "1m",
         },
     }

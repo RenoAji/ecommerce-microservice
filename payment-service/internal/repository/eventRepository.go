@@ -22,8 +22,14 @@ func NewRedisRepository(redisClient *redis.Client) *RedisRepository {
 }
 
 func (r *RedisRepository) PublishPaymentEvent(ctx context.Context, event *domain.PaymentEvent) error {
+	correlationID := event.CorrelationID
+	if correlationID == "" {
+		correlationID = correlationIDFromContext(ctx)
+	}
+
 	msg := map[string]interface{}{
-		"order_id":  event.OrderID,
+		"order_id":       event.OrderID,
+		"correlation_id": correlationID,
 	}
 
 	err := r.redisClient.XAdd(
@@ -37,4 +43,16 @@ func (r *RedisRepository) PublishPaymentEvent(ctx context.Context, event *domain
 	).Err()
 
 	return err
+}
+
+func correlationIDFromContext(ctx context.Context) string {
+	if ctx == nil {
+		return ""
+	}
+
+	if correlationID, ok := ctx.Value("correlation_id").(string); ok {
+		return correlationID
+	}
+
+	return ""
 }
