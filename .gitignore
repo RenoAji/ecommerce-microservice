@@ -33,3 +33,5 @@ tmp/
 # Generated protobuf code
 libs/pb/*.pb.go
 libs/pb/*.pb.go
+
+vendor/
