@@ -153,6 +153,7 @@ jobs:
           file: ./${{ matrix.service }}/Dockerfile
           build-contexts: |
             libs=./libs
+            vendor=./vendor
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
