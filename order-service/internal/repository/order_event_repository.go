@@ -11,7 +11,7 @@ import (
 
 type OrderEventRepository interface {
 	PublishOrderCreatedEvent(ctx context.Context, event *domain.OrderEvent) error
-    PublishOrderPaidEvent(ctx context.Context, event *domain.OrderEvent) error
+	PublishOrderPaidEvent(ctx context.Context, event *domain.OrderEvent) error
 }
 
 type RedisRepository struct {
@@ -23,47 +23,73 @@ func NewRedisRepository(redisClient *redis.Client) *RedisRepository {
 }
 
 func (r *RedisRepository) PublishOrderCreatedEvent(ctx context.Context, event *domain.OrderEvent) error {
-    // Serialize the items to JSON or a flat map
-    itemsJson, _ := json.Marshal(event.Items)
+	// Serialize the items payload for stream transport.
+	itemsJSON, err := json.Marshal(event.Items)
+	if err != nil {
+		return err
+	}
 
-    msg := map[string]interface{}{
-        "order_id":     event.OrderID,
-        "user_id":      event.UserID,
-        "total_amount": event.TotalAmount,
-        "items":        string(itemsJson),
-        "created_at":   time.Now().Format(time.RFC3339),
-    }
+	correlationID := event.CorrelationID
+	if correlationID == "" {
+		correlationID = correlationIDFromContext(ctx)
+	}
 
-    // Add to Stream
-    err := r.redisClient.XAdd(ctx, &redis.XAddArgs{
-        Stream: "stream:orders:created",
-        MaxLen: 1000, 
-        Approx: true,
-        Values: msg,
-    }).Err()
+	msg := map[string]interface{}{
+		"order_id":       event.OrderID,
+		"user_id":        event.UserID,
+		"total_amount":   event.TotalAmount,
+		"items":          string(itemsJSON),
+		"created_at":     time.Now().Format(time.RFC3339),
+		"correlation_id": correlationID,
+	}
 
-    return err
+	// Add to Stream
+	return r.redisClient.XAdd(ctx, &redis.XAddArgs{
+		Stream: "stream:orders:created",
+		MaxLen: 1000,
+		Approx: true,
+		Values: msg,
+	}).Err()
 }
 
 func (r *RedisRepository) PublishOrderPaidEvent(ctx context.Context, event *domain.OrderEvent) error {
-    // Serialize the items to JSON or a flat map
-    itemsJson, _ := json.Marshal(event.Items)
+	// Serialize the items payload for stream transport.
+	itemsJSON, err := json.Marshal(event.Items)
+	if err != nil {
+		return err
+	}
 
-    msg := map[string]interface{}{
-        "order_id":     event.OrderID,
-        "user_id":      event.UserID,
-        "total_amount": event.TotalAmount,
-        "items":        string(itemsJson),
-        "created_at":   time.Now().Format(time.RFC3339),
-    }
+	correlationID := event.CorrelationID
+	if correlationID == "" {
+		correlationID = correlationIDFromContext(ctx)
+	}
 
-    // Add to Stream
-    err := r.redisClient.XAdd(ctx, &redis.XAddArgs{
-        Stream: "stream:orders:paid",
-        MaxLen: 1000, 
-        Approx: true,
-        Values: msg,
-    }).Err()
+	msg := map[string]interface{}{
+		"order_id":       event.OrderID,
+		"user_id":        event.UserID,
+		"total_amount":   event.TotalAmount,
+		"items":          string(itemsJSON),
+		"created_at":     time.Now().Format(time.RFC3339),
+		"correlation_id": correlationID,
+	}
 
-    return err
+	// Add to Stream
+	return r.redisClient.XAdd(ctx, &redis.XAddArgs{
+		Stream: "stream:orders:paid",
+		MaxLen: 1000,
+		Approx: true,
+		Values: msg,
+	}).Err()
+}
+
+func correlationIDFromContext(ctx context.Context) string {
+	if ctx == nil {
+		return ""
+	}
+
+	if correlationID, ok := ctx.Value("correlation_id").(string); ok {
+		return correlationID
+	}
+
+	return ""
 }

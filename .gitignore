@@ -6,9 +6,6 @@ bin/
 *.so
 *.dylib
 
-# Dependency directories
-vendor/
-
 # Environment variables (CRITICAL: Never commit these!)
 .env
 *.env

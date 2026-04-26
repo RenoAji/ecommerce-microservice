@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"errors"
 	"testing"
 	"user-service/internal/domain"
@@ -42,7 +43,7 @@ func TestRegisterUserHashesPasswordBeforeSaving(t *testing.T) {
 	svc := NewUserService(repo)
 
 	user := &domain.User{Email: "john@example.com", Password: "plain-password"}
-	if err := svc.RegisterUser(user); err != nil {
+	if err := svc.RegisterUser(context.Background(), user); err != nil {
 		t.Fatalf("RegisterUser() error = %v", err)
 	}
 
@@ -66,7 +67,7 @@ func TestChangePasswordRejectsInvalidOldPassword(t *testing.T) {
 	repo := &mockUserRepository{findByIDUser: &domain.User{ID: 10, Password: string(hash)}}
 	svc := NewUserService(repo)
 
-	err = svc.ChangePassword(10, "wrong-old", "new-password")
+	err = svc.ChangePassword(context.Background(), 10, "wrong-old", "new-password")
 	if err == nil {
 		t.Fatal("expected error for wrong old password")
 	}
@@ -84,7 +85,7 @@ func TestChangePasswordUpdatesPasswordWhenOldPasswordMatches(t *testing.T) {
 	repo := &mockUserRepository{findByIDUser: &domain.User{ID: 33, Password: string(hash)}}
 	svc := NewUserService(repo)
 
-	err = svc.ChangePassword(33, "correct-old", "new-password")
+	err = svc.ChangePassword(context.Background(), 33, "correct-old", "new-password")
 	if err != nil {
 		t.Fatalf("ChangePassword() error = %v", err)
 	}

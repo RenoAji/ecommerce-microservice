@@ -21,7 +21,7 @@ func NewDeliveryGRPCServer(service *service.DeliveryService) *DeliveryGRPCServer
 
 func (s *DeliveryGRPCServer) GetDeliveryByOrderId(ctx context.Context, req *pb.GetDeliveryByOrderIdRequest) (*pb.DeliveryResponse, error) {
 	orderID := uint(req.OrderId)
-	delivery, err := s.service.GetDeliveryByOrderID(orderID)
+	delivery, err := s.service.GetDeliveryByOrderID(ctx, orderID)
 	if err != nil {
 		return nil, status.Errorf(codes.NotFound, "delivery not found")
 	}

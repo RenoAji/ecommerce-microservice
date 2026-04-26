@@ -2,9 +2,11 @@ package worker
 
 import (
 	"context"
-	"log"
+	"libs/logger"
 	"payment-service/internal/service"
 	"time"
+
+	"go.uber.org/zap"
 )
 
 type CleanupWorker struct {
@@ -20,19 +22,23 @@ func (w *CleanupWorker) StartCleanupJob(ctx context.Context) {
 	ticker := time.NewTicker(5 * time.Minute)
 	defer ticker.Stop()
 
-	log.Println("Starting payment cleanup worker (runs every 5 minutes)...")
+	logger.Log.Info("Starting payment cleanup worker", zap.Duration("interval", 5*time.Minute))
 
 	// Run immediately on startup
-	w.service.CleanupExpiredPayments(ctx)
+	if err := w.service.CleanupExpiredPayments(ctx); err != nil {
+		logger.Log.Error("failed to run payment cleanup", zap.Error(err))
+	}
 
 	for {
 		select {
 		case <-ctx.Done():
-			log.Println("Stopping payment cleanup worker...")
+			logger.Log.Info("Stopping payment cleanup worker")
 			return
 		case <-ticker.C:
-			log.Println("Running scheduled payment cleanup...")
-			w.service.CleanupExpiredPayments(ctx)
+			logger.Log.Info("Running scheduled payment cleanup")
+			if err := w.service.CleanupExpiredPayments(ctx); err != nil {
+				logger.Log.Error("scheduled payment cleanup failed", zap.Error(err))
+			}
 		}
 	}
 }

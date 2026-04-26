@@ -6,15 +6,16 @@ import (
 )
 
 type Config struct {
-	DBHost         string
-	DBUser         string
-	DBPassword     string
-	DBName         string
-	DBPort         string
-	GRPCPort       string
-	ServerPort     string
-	ConsulAddr     string
-	RedisBroker    struct{
+	DBHost      string
+	DBUser      string
+	DBPassword  string
+	DBName      string
+	DBPort      string
+	GRPCPort    string
+	ServerPort  string
+	Environment string
+	ConsulAddr  string
+	RedisBroker struct {
 		Host     string
 		Port     string
 		Password string
@@ -24,15 +25,16 @@ type Config struct {
 
 func LoadConfig() *Config {
 	return &Config{
-		DBHost:         getEnv("DB_HOST", "localhost"),
-		DBUser:         getEnv("DB_USER", "postgres"),
-		DBPassword:     getEnv("DB_PASSWORD", "password"),
-		DBName:         getEnv("DB_NAME", "orders_db"),
-		DBPort:         getEnv("DB_PORT", "5432"),
-		ServerPort:     getEnv("SERVER_PORT", "8081"),
-		GRPCPort:       getEnv("GRPC_PORT", "50051"),
-		ConsulAddr:    getEnv("CONSUL_ADDR", "consul:8500"),
-		RedisBroker: struct{
+		DBHost:      getEnv("DB_HOST", "localhost"),
+		DBUser:      getEnv("DB_USER", "postgres"),
+		DBPassword:  getEnv("DB_PASSWORD", "password"),
+		DBName:      getEnv("DB_NAME", "orders_db"),
+		DBPort:      getEnv("DB_PORT", "5432"),
+		ServerPort:  getEnv("SERVER_PORT", "8081"),
+		GRPCPort:    getEnv("GRPC_PORT", "50051"),
+		Environment: getEnv("ENVIRONMENT", "development"),
+		ConsulAddr:  getEnv("CONSUL_ADDR", "consul:8500"),
+		RedisBroker: struct {
 			Host     string
 			Port     string
 			Password string
@@ -72,7 +74,7 @@ func (c *Config) GetDSN() string {
 		c.DBHost, c.DBUser, c.DBPassword, c.DBName, c.DBPort)
 }
 
-func(c *Config) GetRedisAddr() string {
+func (c *Config) GetRedisAddr() string {
 	return fmt.Sprintf("%s:%s", c.RedisBroker.Host, c.RedisBroker.Port)
 }
 

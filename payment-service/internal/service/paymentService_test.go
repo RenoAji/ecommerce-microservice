@@ -15,7 +15,9 @@ type mockPaymentRepository struct {
 func (m *mockPaymentRepository) AddPayment(orderID uint, amount uint, paymentURL string, status string) error {
 	return nil
 }
-func (m *mockPaymentRepository) GetPaymentByOrderID(orderID uint) (*domain.Payment, error) { return nil, nil }
+func (m *mockPaymentRepository) GetPaymentByOrderID(orderID uint) (*domain.Payment, error) {
+	return nil, nil
+}
 func (m *mockPaymentRepository) UpdatePaymentStatus(orderID uint, status string) error {
 	m.updatedOrderID = orderID
 	m.updatedStatus = status
@@ -39,7 +41,7 @@ func TestHandlePaidPaymentPublishesSuccessAndUpdatesStatus(t *testing.T) {
 	eventRepo := &mockPaymentEventRepository{}
 	svc := NewPaymentService(repo, eventRepo, nil)
 
-	err := svc.handlePaidPayment("42")
+	err := svc.handlePaidPayment(context.Background(), "42")
 	if err != nil {
 		t.Fatalf("handlePaidPayment() error = %v", err)
 	}
@@ -56,7 +58,7 @@ func TestHandleFailedPaymentPublishesFailedAndUpdatesStatus(t *testing.T) {
 	eventRepo := &mockPaymentEventRepository{}
 	svc := NewPaymentService(repo, eventRepo, nil)
 
-	err := svc.handleFailedPayment("9")
+	err := svc.handleFailedPayment(context.Background(), "9")
 	if err != nil {
 		t.Fatalf("handleFailedPayment() error = %v", err)
 	}

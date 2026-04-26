@@ -21,8 +21,14 @@ func NewRedisRepository(redisClient *redis.Client) *RedisRepository {
 }
 
 func (r *RedisRepository) PublishStockReservedEvent(ctx context.Context, event *domain.StockEvent) error {
+	correlationID := event.CorrelationID
+	if correlationID == "" {
+		correlationID = correlationIDFromContext(ctx)
+	}
+
 	msg := map[string]interface{}{
-		"order_id":  event.OrderID,
+		"order_id":       event.OrderID,
+		"correlation_id": correlationID,
 	}
 
 	err := r.redisClient.XAdd(
@@ -39,8 +45,14 @@ func (r *RedisRepository) PublishStockReservedEvent(ctx context.Context, event *
 }
 
 func (r *RedisRepository) PublishStockInsufficientEvent(ctx context.Context, event *domain.StockEvent) error {
+	correlationID := event.CorrelationID
+	if correlationID == "" {
+		correlationID = correlationIDFromContext(ctx)
+	}
+
 	msg := map[string]interface{}{
-		"order_id":  event.OrderID,
+		"order_id":       event.OrderID,
+		"correlation_id": correlationID,
 	}
 
 	err := r.redisClient.XAdd(
@@ -54,4 +66,16 @@ func (r *RedisRepository) PublishStockInsufficientEvent(ctx context.Context, eve
 	).Err()
 
 	return err
+}
+
+func correlationIDFromContext(ctx context.Context) string {
+	if ctx == nil {
+		return ""
+	}
+
+	if correlationID, ok := ctx.Value("correlation_id").(string); ok {
+		return correlationID
+	}
+
+	return ""
 }

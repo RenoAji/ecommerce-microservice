@@ -44,7 +44,7 @@ func (h *ProductHandler) Create(c *gin.Context) {
 	}
 
 	// Call the service layer
-	if err := h.productService.CreateProduct(&product); err != nil {
+	if err := h.productService.CreateProduct(c.Request.Context(), &product); err != nil {
 		// Check PostgreSQL unique constraint violation return 409
 		if strings.Contains(err.Error(), "duplicate key value") {
 			c.JSON(http.StatusConflict, domain.ErrorResponse{Error: "product already exists"})
@@ -99,7 +99,7 @@ func (h *ProductHandler) Get(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
 
-	result, err := h.productService.GetProducts(search, categoryID, minPrice, maxPrice, order, sortBy, page, limit)
+	result, err := h.productService.GetProducts(c.Request.Context(), search, categoryID, minPrice, maxPrice, order, sortBy, page, limit)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, domain.ErrorResponse{Error: "could not retrieve products"})
 		return
@@ -127,7 +127,7 @@ func (h *ProductHandler) GetByID(c *gin.Context) {
 		return
 	}
 
-	product, err := h.productService.GetProductByID(uint(id))
+	product, err := h.productService.GetProductByID(c.Request.Context(), uint(id))
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			c.JSON(http.StatusNotFound, domain.ErrorResponse{Error: "product not found"})
@@ -166,7 +166,7 @@ func (h *ProductHandler) Delete(c *gin.Context) {
 		return
 	}
 
-	if err := h.productService.DeleteProduct(uint(productID)); err != nil {
+	if err := h.productService.DeleteProduct(c.Request.Context(), uint(productID)); err != nil {
 		if err == gorm.ErrRecordNotFound {
 			c.JSON(http.StatusNotFound, domain.ErrorResponse{Error: "product not found"})
 			return
@@ -213,7 +213,7 @@ func (h *ProductHandler) Update(c *gin.Context) {
 	}
 
 	// Call the service layer to update the product
-	updatedProduct, err := h.productService.UpdateProduct(uint(productID), &product)
+	updatedProduct, err := h.productService.UpdateProduct(c.Request.Context(), uint(productID), &product)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, domain.ErrorResponse{Error: "could not update product"})
 		return

@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"libs/logger"
+	"log"
 	"net/http"
 	"strings"
 	"user-service/internal/domain"
@@ -8,6 +10,7 @@ import (
 
 	jwt "github.com/appleboy/gin-jwt/v3"
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 )
 
 type UserHandler struct {
@@ -52,7 +55,7 @@ func (h *UserHandler) Register(c *gin.Context) {
 	}
 
 	// Call the service layer
-	if err := h.userService.RegisterUser(&user); err != nil {
+	if err := h.userService.RegisterUser(c.Request.Context(), &user); err != nil {
 		// Check PostgreSQL unique constraint violation return 409
 		if strings.Contains(err.Error(), "duplicate key value") {
 			c.JSON(http.StatusConflict, ErrorResponse{Code: http.StatusConflict, Message: "Email or username already exists"})
@@ -80,6 +83,11 @@ func (h *UserHandler) Register(c *gin.Context) {
 // @Router /auth/profile [get]
 func (h *UserHandler) Profile(c *gin.Context) {
 	claims := jwt.ExtractClaims(c)
+	log.Print(claims)
+	if claims != nil {
+		l := logger.ForContext(c.Request.Context())
+		l.Info("Extracted JWT claims", zap.Any("claims", claims))
+	}
 	c.JSON(200, gin.H{"userID": claims["userID"], "email": claims["email"], "username": claims["username"]})
 }
 
@@ -112,7 +120,7 @@ func (h *UserHandler) ChangePassword(c *gin.Context) {
 	userID := uint(claims["userID"].(float64))
 
 	// Call the service layer, pass the userID from JWT claims and passwords from request
-	if err := h.userService.ChangePassword(userID, req.OldPassword, req.NewPassword); err != nil {
+	if err := h.userService.ChangePassword(c.Request.Context(), userID, req.OldPassword, req.NewPassword); err != nil {
 		if strings.Contains(err.Error(), "incorrect old password") {
 			c.JSON(http.StatusUnauthorized, ErrorResponse{Code: http.StatusUnauthorized, Message: "Incorrect old password"})
 			return

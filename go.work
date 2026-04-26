@@ -1,10 +1,12 @@
-go 1.25.7
+go 1.25.8
 
 use (
 	./cart-service
 	./delivery-service
 	./libs/consulclient
 	./libs/infrastructure
+	./libs/logger
+	./libs/middleware
 	./libs/pb
 	./order-service
 	./payment-service

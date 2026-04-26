@@ -27,10 +27,10 @@ func NewDeliveryHandler(s *service.DeliveryService) *DeliveryHandler {
 // @Security BearerAuth
 // @Router /delivery [get]
 func (h *DeliveryHandler) ListDeliveries(c *gin.Context) {
-	status:= c.Query("status")
+	status := c.Query("status")
 
 	// call service layer to get deliveries
-	deliveries, err := h.service.ListDeliveries(status)
+	deliveries, err := h.service.ListDeliveries(c.Request.Context(), status)
 	if err != nil {
 		c.JSON(500, gin.H{"error": "could not retrieve deliveries"})
 		return
@@ -59,7 +59,7 @@ func (h *DeliveryHandler) GetDelivery(c *gin.Context) {
 	}
 
 	/// call service layer to get delivery by ID
-	delivery, err := h.service.GetDeliveryByID(uint(id)) 
+	delivery, err := h.service.GetDeliveryByID(c.Request.Context(), uint(id))
 	if err != nil {
 		c.JSON(404, gin.H{"error": "delivery not found"})
 		return
@@ -92,7 +92,7 @@ func (h *DeliveryHandler) UpdateDeliveryStatus(c *gin.Context) {
 	var req struct {
 		Status string `json:"status"`
 	}
-	
+
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(400, gin.H{"error": "invalid request body"})
 		return
