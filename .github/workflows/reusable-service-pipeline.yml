@@ -77,7 +77,8 @@ jobs:
   pipeline:
     needs:
       - changes
-    if: ${{ needs.changes.outputs.services != '[]' && needs.changes.outputs.services != '' }}
+    if: ${{ needs.changes.outputs.services != '[]' && needs.changes.outputs.services
+      != '' }}
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -86,20 +87,16 @@ jobs:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: password
           POSTGRES_DB: testdb
-        ports: ["5432:5432"]
+        ports: [ "5432:5432" ]
         options: >-
-          --health-cmd="pg_isready -U postgres"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=5
+          --health-cmd="pg_isready -U postgres" --health-interval=10s
+          --health-timeout=5s --health-retries=5
       redis:
         image: redis:7
-        ports: ["6379:6379"]
+        ports: [ "6379:6379" ]
         options: >-
-          --health-cmd="redis-cli ping"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=5
+          --health-cmd="redis-cli ping" --health-interval=10s
+          --health-timeout=5s --health-retries=5
     strategy:
       fail-fast: false # Ensure all services are tested even if one fails
       matrix:
@@ -128,9 +125,9 @@ jobs:
 
       - name: Verify & Test
         run: |
-          go build -mod=vendor -C ${{ matrix.service }} -v ./...
-          go test -mod=vendor -C ${{ matrix.service }} -v -cover ./...
-          go test -mod=vendor -C ${{ matrix.service }} -v -tags=integration -count=1 ./...
+          go build -C ${{ matrix.service }} -mod=vendor -v ./...
+          go test -C ${{ matrix.service }} -mod=vendor -v -cover ./...
+          go test -C ${{ matrix.service }} -mod=vendor -v -tags=integration -count=1 ./...
 
       # Only runs if 'run_build_push' is true AND 'Verify & Test' passed
       - name: Log in to GHCR
