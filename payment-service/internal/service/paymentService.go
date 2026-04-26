@@ -5,7 +5,7 @@ import (
 	"crypto/sha512"
 	"encoding/hex"
 	"fmt"
-	"log"
+	"libs/logger"
 	"payment-service/internal/config"
 	"payment-service/internal/domain"
 	"payment-service/internal/infrastructure"
@@ -14,11 +14,12 @@ import (
 
 	"github.com/midtrans/midtrans-go"
 	"github.com/midtrans/midtrans-go/snap"
+	"go.uber.org/zap"
 )
 
 type PaymentService struct {
-	repo repository.PaymentRepository
-	eventRepo repository.EventRepository
+	repo           repository.PaymentRepository
+	eventRepo      repository.EventRepository
 	midtransClient *infrastructure.MidtransWrapper
 }
 
@@ -26,40 +27,37 @@ func NewPaymentService(repo repository.PaymentRepository, eventRepo repository.E
 	return &PaymentService{repo: repo, eventRepo: eventRepo, midtransClient: midtransClient}
 }
 
-func (s *PaymentService) CreatePendingPayment(orderID uint, amount uint) (string, error) {
+func (s *PaymentService) CreatePendingPayment(ctx context.Context, orderID uint, amount uint) (string, error) {
+	l := logger.ForContext(ctx)
 	// Initiate Snap request
 	req := &snap.Request{
 		TransactionDetails: midtrans.TransactionDetails{
-			OrderID:   fmt.Sprintf("%d", orderID),
-			GrossAmt:  int64(amount),
+			OrderID:  fmt.Sprintf("%d", orderID),
+			GrossAmt: int64(amount),
 		},
 		CreditCard: &snap.CreditCardDetails{
 			Secure: true,
 		},
 	}
 
-	// 3. Request create Snap transaction to Midtrans
-	snapResp, err := s.midtransClient.SnapClient.CreateTransaction(req)
-	if err != nil {
-		return "", err
+	// Request create Snap transaction to Midtrans
+	snapResp, midtransErr := s.midtransClient.SnapClient.CreateTransaction(req)
+	if midtransErr != nil {
+		return "", fmt.Errorf("failed to create midtrans transaction: %w", midtransErr)
 	}
-
-	fmt.Println("Response :", snapResp)
-
-
-	// Log the payment URL
-	log.Printf("Payment URL for order %d: %s", orderID, snapResp.RedirectURL)
 
 	// Save payment with status PENDING and payment URL
-	repoErr := s.repo.AddPayment(orderID, amount, snapResp.RedirectURL, "PENDING")
-	if repoErr != nil {
-		return "", repoErr
+	err := s.repo.AddPayment(orderID, amount, snapResp.RedirectURL, "PENDING")
+	if err != nil {
+		return "", fmt.Errorf("failed to save pending payment: %w", err)
 	}
+	l.Info("Pending payment created", zap.Uint("orderID", orderID), zap.Uint("amount", amount))
 
 	return snapResp.RedirectURL, nil
 }
 
 func (s *PaymentService) ProcessPaymentNotification(ctx context.Context, notificationPayload map[string]interface{}) error {
+	l := logger.ForContext(ctx)
 	// Verify the signature to ensure this request is actually from Midtrans
 	cfg := config.LoadConfig()
 
@@ -67,22 +65,22 @@ func (s *PaymentService) ProcessPaymentNotification(ctx context.Context, notific
 	if !ok {
 		return fmt.Errorf("missing signature_key")
 	}
-	
+
 	orderId, ok := notificationPayload["order_id"].(string)
 	if !ok {
 		return fmt.Errorf("missing order_id")
 	}
-	
+
 	statusCode, ok := notificationPayload["status_code"].(string)
 	if !ok {
 		return fmt.Errorf("missing status_code")
 	}
-	
+
 	grossAmount, ok := notificationPayload["gross_amount"].(string)
 	if !ok {
 		return fmt.Errorf("missing gross_amount")
 	}
-	
+
 	serverKey := cfg.MidtransServerKey
 
 	// Signature Formula: SHA512(order_id + status_code + gross_amount + server_key)
@@ -97,9 +95,9 @@ func (s *PaymentService) ProcessPaymentNotification(ctx context.Context, notific
 
 	transactionStatusResp, e := s.midtransClient.CoreClient.CheckTransaction(orderId)
 	if e != nil {
-		// If transaction not found (404), log and return nil (don't retry)
+		// Ignore test notifications that do not exist in Midtrans.
 		if e.StatusCode == 404 {
-			log.Printf("Transaction %s not found in Midtrans (test notification?): %v", orderId, e)
+			l.Info("Midtrans transaction not found, skipping notification", zap.String("orderID", orderId))
 			return nil
 		}
 		return fmt.Errorf("failed to check transaction: %w", e)
@@ -107,7 +105,7 @@ func (s *PaymentService) ProcessPaymentNotification(ctx context.Context, notific
 
 	orderIDUint, err := strconv.ParseUint(orderId, 10, 64)
 	if err != nil {
-		return err
+		return fmt.Errorf("invalid order id in notification: %w", err)
 	}
 
 	if transactionStatusResp != nil {
@@ -115,120 +113,156 @@ func (s *PaymentService) ProcessPaymentNotification(ctx context.Context, notific
 		case "capture":
 			switch transactionStatusResp.FraudStatus {
 			case "challenge":
-				log.Printf("Payment for order %s requires manual review", orderId)
-				return s.repo.UpdatePaymentStatus(uint(orderIDUint), "CHALLENGE")
+				err := s.repo.UpdatePaymentStatus(uint(orderIDUint), "CHALLENGE")
+				if err != nil {
+					return fmt.Errorf("failed to mark payment as challenge: %w", err)
+				}
+				l.Info("Payment requires manual review", zap.String("orderID", orderId), zap.String("payment_status", "CHALLENGE"))
+				return nil
 			case "accept":
-				log.Printf("Payment captured and accepted for order %s", orderId)
-				return s.handlePaidPayment(orderId)
+				return s.handlePaidPayment(ctx, orderId)
 			case "deny":
-				log.Printf("Payment for order %s denied due to fraud", orderId)
-				return s.handleFailedPayment(orderId)
+				return s.handleFailedPayment(ctx, orderId)
 			}
 		case "settlement":
-			log.Printf("Payment settled for order %s", orderId)
-			return s.handlePaidPayment(orderId)
+			return s.handlePaidPayment(ctx, orderId)
 		case "pending":
-			log.Printf("Payment pending for order %s", orderId)
-			return s.repo.UpdatePaymentStatus(uint(orderIDUint), "PENDING")
+			err := s.repo.UpdatePaymentStatus(uint(orderIDUint), "PENDING")
+			if err != nil {
+				return fmt.Errorf("failed to update payment status to pending: %w", err)
+			}
+			l.Info("Payment remains pending", zap.String("orderID", orderId), zap.String("payment_status", "PENDING"))
+			return nil
 		case "deny":
-			log.Printf("Payment denied for order %s", orderId)
-			return s.handleFailedPayment(orderId)
+			return s.handleFailedPayment(ctx, orderId)
 		case "cancel", "expire":
-			log.Printf("Payment canceled or expired for order %s", orderId)
-			return s.handleFailedPayment(orderId)
+			return s.handleFailedPayment(ctx, orderId)
 		}
 	}
 	return nil
 }
 
-func (s *PaymentService) handlePaidPayment(orderID string) error{
+func (s *PaymentService) handlePaidPayment(ctx context.Context, orderID string) error {
+	l := logger.ForContext(ctx)
 	orderIDUint, err := strconv.ParseUint(orderID, 10, 64)
 	if err != nil {
-		return err
+		return fmt.Errorf("invalid order id for paid payment handling: %w", err)
 	}
 
 	// Send event to order service to update order status to PAID
-	s.eventRepo.PublishPaymentEvent(context.Background(), &domain.PaymentEvent{
-		OrderID: uint(orderIDUint),
-		Status: "success",
+	err = s.eventRepo.PublishPaymentEvent(ctx, &domain.PaymentEvent{
+		OrderID:       uint(orderIDUint),
+		Status:        "success",
+		CorrelationID: correlationIDFromContext(ctx),
 	})
+	if err != nil {
+		return fmt.Errorf("failed to publish payment success event: %w", err)
+	}
 
-	return s.repo.UpdatePaymentStatus(uint(orderIDUint), "SUCCESS")
+	err = s.repo.UpdatePaymentStatus(uint(orderIDUint), "SUCCESS")
+	if err != nil {
+		return fmt.Errorf("failed to update payment status to success: %w", err)
+	}
+
+	l.Info("Payment marked as successful", zap.String("orderID", orderID), zap.String("payment_status", "SUCCESS"))
+	return nil
 }
 
-func (s *PaymentService) handleFailedPayment(orderID string) error{
+func (s *PaymentService) handleFailedPayment(ctx context.Context, orderID string) error {
+	l := logger.ForContext(ctx)
 	orderIDUint, err := strconv.ParseUint(orderID, 10, 64)
 	if err != nil {
-		return err
+		return fmt.Errorf("invalid order id for failed payment handling: %w", err)
 	}
 
 	// Send event to order service to update order status to PAYMENT_FAILED
-	s.eventRepo.PublishPaymentEvent(context.Background(), &domain.PaymentEvent{
-		OrderID: uint(orderIDUint),
-		Status: "failed",
+	err = s.eventRepo.PublishPaymentEvent(ctx, &domain.PaymentEvent{
+		OrderID:       uint(orderIDUint),
+		Status:        "failed",
+		CorrelationID: correlationIDFromContext(ctx),
 	})
+	if err != nil {
+		return fmt.Errorf("failed to publish payment failed event: %w", err)
+	}
 
-	return s.repo.UpdatePaymentStatus(uint(orderIDUint), "FAILED")
+	err = s.repo.UpdatePaymentStatus(uint(orderIDUint), "FAILED")
+	if err != nil {
+		return fmt.Errorf("failed to update payment status to failed: %w", err)
+	}
+
+	l.Info("Payment marked as failed", zap.String("orderID", orderID), zap.String("payment_status", "FAILED"))
+	return nil
 }
 
 // CleanupExpiredPayments finds and processes payments that are stuck in PENDING status
 // This handles cases where webhooks were missed due to downtime or network issues
-func (s *PaymentService) CleanupExpiredPayments(ctx context.Context) {
+func (s *PaymentService) CleanupExpiredPayments(ctx context.Context) error {
+	l := logger.ForContext(ctx)
 	// Find all PENDING payments older than 2 minutes (1min expiry + 1min buffer)
 	// TODO: Change to 35 minutes for production (30min expiry + 5min buffer)
 	expiredPayments, err := s.repo.FindExpiredPendingPayments(60)
 	if err != nil {
-		log.Printf("Error finding expired payments: %v", err)
-		return
+		return fmt.Errorf("failed to find expired pending payments: %w", err)
 	}
 
 	if len(expiredPayments) == 0 {
-		log.Printf("No expired pending payments found (checking payments older than 2 minutes)")
-		return
+		l.Info("No expired pending payments found", zap.Int("expiryMinutes", 60))
+		return nil
 	}
 
-	log.Printf("Found %d expired pending payments to cleanup", len(expiredPayments))
+	l.Info("Expired pending payments found", zap.Int("count", len(expiredPayments)))
 
 	for _, payment := range expiredPayments {
 		orderIDStr := fmt.Sprintf("%d", payment.OrderID)
-		log.Printf("Checking expired payment for order %s", orderIDStr)
-		
+		l.Info("Checking expired payment", zap.String("orderID", orderIDStr))
+
 		// Double-check with Midtrans API to get current status
 		transactionStatusResp, midtransErr := s.midtransClient.CoreClient.CheckTransaction(orderIDStr)
-		
+
 		if midtransErr != nil {
 			// Handle 404 - transaction doesn't exist in Midtrans (payment page never opened or test order)
 			if midtransErr.GetStatusCode() == 404 {
-				log.Printf("Transaction %s not found in Midtrans (404), treating as expired/cancelled", orderIDStr)
-				handleErr := s.handleFailedPayment(orderIDStr)
-				if handleErr != nil {
-					log.Printf("Error handling failed payment for order %s: %v", orderIDStr, handleErr)
+				err := s.handleFailedPayment(ctx, orderIDStr)
+				if err != nil {
+					return fmt.Errorf("failed to handle missing midtrans transaction %s as failed payment: %w", orderIDStr, err)
 				}
 				continue
 			}
-			log.Printf("Error checking transaction %s with Midtrans: %v", orderIDStr, midtransErr)
-			continue
+			return fmt.Errorf("failed to check transaction %s with midtrans: %w", orderIDStr, midtransErr)
 		}
-		
+
 		if transactionStatusResp != nil {
 			switch transactionStatusResp.TransactionStatus {
 			case "expire", "cancel", "deny":
-				log.Printf("Cleaning up expired/cancelled payment for order %s (status: %s)", orderIDStr, transactionStatusResp.TransactionStatus)
-				err := s.handleFailedPayment(orderIDStr)
+				err := s.handleFailedPayment(ctx, orderIDStr)
 				if err != nil {
-					log.Printf("Error handling failed payment for order %s: %v", orderIDStr, err)
+					return fmt.Errorf("failed to handle expired payment for order %s: %w", orderIDStr, err)
 				}
 			case "settlement", "capture":
-				log.Printf("Payment was actually successful for order %s, updating status", orderIDStr)
-				err := s.handlePaidPayment(orderIDStr)
+				err := s.handlePaidPayment(ctx, orderIDStr)
 				if err != nil {
-					log.Printf("Error handling paid payment for order %s: %v", orderIDStr, err)
+					return fmt.Errorf("failed to handle successful payment for order %s: %w", orderIDStr, err)
 				}
 			case "pending":
-				log.Printf("Payment for order %s is still pending in Midtrans, will check again later", orderIDStr)
+				l.Info("Payment still pending", zap.String("orderID", orderIDStr))
 			default:
-				log.Printf("Unknown transaction status %s for order %s", transactionStatusResp.TransactionStatus, orderIDStr)
+				l.Info("Payment has unknown transaction status", zap.String("orderID", orderIDStr), zap.String("payment_status", transactionStatusResp.TransactionStatus))
 			}
 		}
 	}
+
+	l.Info("Expired payment cleanup completed", zap.Int("processedCount", len(expiredPayments)))
+	return nil
+}
+
+func correlationIDFromContext(ctx context.Context) string {
+	if ctx == nil {
+		return ""
+	}
+
+	if correlationID, ok := ctx.Value("correlation_id").(string); ok {
+		return correlationID
+	}
+
+	return ""
 }

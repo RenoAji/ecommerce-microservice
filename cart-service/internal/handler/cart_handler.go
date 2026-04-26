@@ -3,8 +3,8 @@ package handler
 import (
 	"cart-service/internal/domain"
 	"cart-service/internal/service"
-	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -76,7 +76,10 @@ func (h *CartHandler) AddToCart(c *gin.Context) {
 
 	err := h.cartService.AddToCart(ctx, userID, &addItemRequest)
 	if err != nil {
-		fmt.Print(err)
+		if strings.Contains(err.Error(), "not found") {
+        	c.JSON(404, domain.ErrorResponse{Error: "Product not found"})
+        	return
+    	}
 		c.JSON(500, domain.ErrorResponse{Error: "Failed to add item to cart"})
 		return
 	}

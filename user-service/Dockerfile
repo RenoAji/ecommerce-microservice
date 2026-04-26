@@ -1,5 +1,7 @@
+# syntax=docker/dockerfile:1
+
 # Stage 1: Build the binary
-FROM golang:1.24-alpine AS builder
+FROM golang:1.25-alpine AS builder
 
 # Install git (sometimes needed for fetching dependencies)
 RUN apk add --no-cache git
@@ -9,15 +11,15 @@ WORKDIR /app
 
 # Copy dependency files first (for better caching)
 COPY go.mod go.sum ./
-RUN --mount=type=cache,target=/root/.cache/go-build \
-    --mount=type=cache,target=/go/pkg/mod \
- go mod download
+COPY --from=libs ./**/*.mod ./**/*.sum ../libs/
+COPY --from=libs . ../libs
+COPY --from=vendor . ../vendor
 
 # Copy the rest of the source code
 COPY . .
 
 # Build the app (pointing to your main.go location)
-RUN CGO_ENABLED=0 GOOS=linux go build -o main ./cmd/api/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -mod=vendor -o main ./cmd/api/main.go
 
 # Stage 2: Final lightweight image
 FROM alpine:latest

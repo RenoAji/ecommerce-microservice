@@ -15,6 +15,10 @@ func InternalAuthInterceptor(ctx context.Context, req interface{}, info *grpc.Un
     
     // Get the secret from the service's own environment
     systemSecret := os.Getenv("INTERNAL_SECRET")
+
+    if ids := md.Get("x-correlation-id"); len(ids) > 0 {
+        ctx = context.WithValue(ctx, "correlation_id", ids[0])
+    }
     
     token := md["authorization"]
     if len(token) == 0 || token[0] != "Bearer "+systemSecret {

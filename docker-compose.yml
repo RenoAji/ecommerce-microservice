@@ -1,4 +1,63 @@
 services:
+  # ELK Stack for centralized logging
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.12.0
+    container_name: elasticsearch
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    networks:
+      - elk
+    ports:
+      - "9200:9200"
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.12.0
+    container_name: logstash
+    volumes:
+      - ./logstash/pipeline:/usr/share/logstash/pipeline:ro
+      - ./logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml:ro
+    networks:
+      - elk
+    ports:
+      - "5044:5044" # Logstash Beats input
+    depends_on:
+      - elasticsearch
+    stdin_open: true
+    tty: true
+    restart: always
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.12.0
+    container_name: kibana
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    networks:
+      - elk
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
+
+  filebeat:
+    image: docker.elastic.co/beats/filebeat:8.12.0
+    container_name: filebeat
+    user: root
+    privileged: true
+    networks:
+      - elk
+    volumes:
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro,Z
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+      - nginx_logs:/var/log/nginx:ro
+    command: filebeat -e -strict.perms=false
+    depends_on:
+      - logstash
+
   # --- INFRASTRUCTURE ---
   gateway:
     image: nginx:alpine
@@ -7,6 +66,7 @@ services:
       - "${GATEWAY_PORT:-8080}:80"
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - nginx_logs:/var/log/nginx
     networks:
       - app-network
 
@@ -45,7 +105,8 @@ services:
       test:
         [
           "CMD-SHELL",
-          "pg_isready -U ${DB_USER:-postgres} -d ${PRODUCT_DB_NAME:-product_db}",
+          "pg_isready -U ${DB_USER:-postgres} -d
+            ${PRODUCT_DB_NAME:-product_db}",
         ]
       interval: 5s
       timeout: 5s
@@ -57,11 +118,11 @@ services:
   redis:
     image: redis:7-alpine
     container_name: redis
-    command: ["redis-server", "--appendonly", "yes"]
+    command: [ "redis-server", "--appendonly", "yes" ]
     ports:
       - "${REDIS_PORT:-6379}:6379"
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: [ "CMD", "redis-cli", "ping" ]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -71,11 +132,11 @@ services:
   consul:
     image: hashicorp/consul:1.21
     container_name: consul
-    command: ["agent", "-dev", "-client=0.0.0.0", "-ui"]
+    command: [ "agent", "-dev", "-client=0.0.0.0", "-ui" ]
     ports:
       - "8500:8500"
     healthcheck:
-      test: ["CMD", "consul", "info"]
+      test: [ "CMD", "consul", "info" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -117,7 +178,8 @@ services:
       test:
         [
           "CMD-SHELL",
-          "pg_isready -U ${DB_USER:-postgres} -d ${PAYMENT_DB_NAME:-payment_db}",
+          "pg_isready -U ${DB_USER:-postgres} -d
+            ${PAYMENT_DB_NAME:-payment_db}",
         ]
       interval: 5s
       timeout: 5s
@@ -139,7 +201,8 @@ services:
       test:
         [
           "CMD-SHELL",
-          "pg_isready -U ${DB_USER:-postgres} -d ${DELIVERY_DB_NAME:-delivery_db}",
+          "pg_isready -U ${DB_USER:-postgres} -d
+            ${DELIVERY_DB_NAME:-delivery_db}",
         ]
       interval: 5s
       timeout: 5s
@@ -152,6 +215,9 @@ services:
   user-service:
     build:
       context: ./user-service
+      additional_contexts:
+        libs: ./libs
+        vendor: ./vendor
     environment:
       DB_HOST: user-db
       DB_PORT: 5432
@@ -171,6 +237,7 @@ services:
       dockerfile: Dockerfile
       additional_contexts:
         libs: ./libs
+        vendor: ./vendor
     environment:
       DB_HOST: product-db
       DB_PORT: 5432
@@ -197,6 +264,7 @@ services:
       dockerfile: Dockerfile
       additional_contexts:
         libs: ./libs
+        vendor: ./vendor
     environment:
       REDIS_HOST: redis
       REDIS_PORT: 6379
@@ -218,6 +286,7 @@ services:
       dockerfile: Dockerfile
       additional_contexts:
         libs: ./libs
+        vendor: ./vendor
     environment:
       DB_HOST: order-db
       DB_PORT: 5432
@@ -246,6 +315,7 @@ services:
       dockerfile: Dockerfile
       additional_contexts:
         libs: ./libs
+        vendor: ./vendor
     environment:
       DB_HOST: payment-db
       DB_PORT: 5432
@@ -275,6 +345,7 @@ services:
       dockerfile: Dockerfile
       additional_contexts:
         libs: ./libs
+        vendor: ./vendor
     environment:
       DB_HOST: delivery-db
       DB_PORT: 5432
@@ -301,6 +372,8 @@ services:
 networks:
   app-network:
     driver: bridge
+  elk:
+    driver: bridge
 
 volumes:
   user_postgres_data:
@@ -308,3 +381,5 @@ volumes:
   order_postgres_data:
   payment_postgres_data:
   delivery_postgres_data:
+  es_data:
+  nginx_logs:

@@ -26,13 +26,15 @@ type mockProductRepository struct {
 }
 
 func (m *mockProductRepository) SaveProduct(product *domain.CreateProductRequest) error { return nil }
-func (m *mockProductRepository) CreateCategory(category *domain.Category) error { return nil }
-func (m *mockProductRepository) AddStock(productID uint, add int) error { return nil }
-func (m *mockProductRepository) Delete(productID uint) error { return nil }
-func (m *mockProductRepository) GetByID(productID uint) (*domain.Product, error) { return nil, nil }
+func (m *mockProductRepository) CreateCategory(category *domain.Category) error         { return nil }
+func (m *mockProductRepository) AddStock(productID uint, add int) error                 { return nil }
+func (m *mockProductRepository) Delete(productID uint) error                            { return nil }
+func (m *mockProductRepository) GetByID(productID uint) (*domain.Product, error)        { return nil, nil }
 func (m *mockProductRepository) AssignCategory(productID uint, categoryID []uint) error { return nil }
-func (m *mockProductRepository) RemoveCategory(productID uint, categoryID uint) error { return nil }
-func (m *mockProductRepository) ListCategories(productID uint) ([]domain.Category, error) { return nil, nil }
+func (m *mockProductRepository) RemoveCategory(productID uint, categoryID uint) error   { return nil }
+func (m *mockProductRepository) ListCategories(productID uint) ([]domain.Category, error) {
+	return nil, nil
+}
 func (m *mockProductRepository) UpdateProduct(id uint, req *domain.UpdateProductRequest) (*domain.Product, error) {
 	return nil, nil
 }
@@ -52,9 +54,9 @@ func (m *mockProductRepository) ListAll(search, categoryID, minPrice, maxPrice, 
 }
 
 type mockProductEventRepository struct {
-	reservedCalled     bool
-	insufficientCalled bool
-	reservedOrderID    uint
+	reservedCalled      bool
+	insufficientCalled  bool
+	reservedOrderID     uint
 	insufficientOrderID uint
 }
 
@@ -75,7 +77,7 @@ func TestGetProductsAppliesDefaultPagination(t *testing.T) {
 	eventRepo := &mockProductEventRepository{}
 	svc := NewProductService(repo, eventRepo)
 
-	_, err := svc.GetProducts("", "", "", "", "", "", 0, 0)
+	_, err := svc.GetProducts(context.Background(), "", "", "", "", "", "", 0, 0)
 	if err != nil {
 		t.Fatalf("GetProducts() error = %v", err)
 	}

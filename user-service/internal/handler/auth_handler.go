@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"libs/logger"
 	"time"
 	"user-service/internal/domain"
 	"user-service/internal/repository"
@@ -8,6 +9,7 @@ import (
 	jwt "github.com/appleboy/gin-jwt/v3"
 	"github.com/gin-gonic/gin"
 	gojwt "github.com/golang-jwt/jwt/v5"
+	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -58,6 +60,10 @@ func NewAuthMiddleware(repo repository.UserRepository, secretKey string) (*jwt.G
 				return nil, jwt.ErrFailedAuthentication
 			}
 
+			l := logger.ForContext(c.Request.Context())
+			l.Info("User authenticated", zap.String("email", loginVals.Email))
+
+
 			return user, nil
 		},
 		PayloadFunc: func(data any) gojwt.MapClaims {
@@ -77,12 +83,16 @@ func NewAuthMiddleware(repo repository.UserRepository, secretKey string) (*jwt.G
 
 			// Check if required claims exist
 			if userID, ok := claims["userID"]; ok && userID != nil {
+				l := logger.ForContext(c.Request.Context())
+				l.Info("Authorized access", zap.Any("claims", claims))
 				return true
 			}
 
 			return false
 		},
 		Unauthorized: func(c *gin.Context, code int, message string) {
+			l := logger.ForContext(c.Request.Context())
+			l.Warn("Unauthorized access", zap.Int("code", code), zap.String("reason", message))
 			c.JSON(code, gin.H{
 				"code":    code,
 				"message": message,

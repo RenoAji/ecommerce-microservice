@@ -16,7 +16,7 @@ func NewPaymentGRPCServer(service *service.PaymentService) *PaymentGRPCServer {
 }
 
 func (s *PaymentGRPCServer) GetPaymentURL(ctx context.Context, req *pb.GetPaymentRequest) (*pb.GetPaymentResponse, error) {
-	url, err := s.service.CreatePendingPayment(uint(req.OrderId), uint(req.Amount))
+	url, err := s.service.CreatePendingPayment(ctx, uint(req.OrderId), uint(req.Amount))
 
 	return &pb.GetPaymentResponse{
 		PaymentUrl: url,

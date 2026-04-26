@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -13,6 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
+	"go.uber.org/zap"
 
 	"order-service/internal/config"
 	"order-service/internal/domain"
@@ -24,6 +24,8 @@ import (
 	"order-service/internal/worker"
 
 	"libs/consulclient"
+	"libs/logger"
+	sharedMiddleware "libs/middleware/gin"
 
 	_ "order-service/docs"
 	// _ "github.com/mbobakov/grpc-consul-resolver"
@@ -48,13 +50,16 @@ import (
 // @name Authorization
 // @description Type "Bearer" followed by a space and JWT token.
 func main() {
+	gin.DisableConsoleColor()
 	// Load configuration
 	cfg := config.LoadConfig()
+	logger.InitLogger("order-service", cfg.Environment)
 
 	// Set up database connection
 	db, err := infrastructure.NewPostgresDB(cfg.GetDSN())
 	if err != nil {
-		log.Fatal("Failed to connect to database: ", err)
+		logger.Log.Error("Failed to connect to database", zap.Error(err))
+		os.Exit(1)
 	}
 
 	// Auto-migrate (creates the table if it doesn't exist)
@@ -63,14 +68,16 @@ func main() {
 	// Set up Consul
 	consulClient, err := consulclient.NewConsulClient(cfg.ConsulAddr)
 	if err != nil {
-		log.Fatal("Failed to create Consul client: ", err)
+		logger.Log.Error("Failed to create Consul client", zap.Error(err))
+		os.Exit(1)
 	}
 
 	hostname, _ := os.Hostname()
 	serviceID := fmt.Sprintf("order-service-%s", hostname)
 	err = consulClient.RegisterService(serviceID, "order-service", "order-service", cfg.GRPCPort)
 	if err != nil {
-		log.Fatal("Failed to register service with Consul: ", err)
+		logger.Log.Error("Failed to register service with Consul", zap.Error(err))
+		os.Exit(1)
 	}
 	defer consulClient.DeregisterService(serviceID)
 
@@ -86,13 +93,12 @@ func main() {
 	// Redis Broker Client
 	redisBrokerClient := infrastructure.NewRedisBroker(cfg.GetRedisAddr(), cfg.RedisBroker.Password, cfg.RedisBroker.DB)
 
-
 	// Initialize repositories, services, and handlers
 	repo := repository.NewPostgresRepository(db)
 	brokerRepo := repository.NewRedisRepository(redisBrokerClient)
 	svc := service.NewOrderService(repo, brokerRepo, CartClient, ProductClient, PaymentClient)
 	hdl := handler.NewOrderHandler(svc)
-	
+
 	// Create cancellable context for graceful shutdown
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -100,7 +106,8 @@ func main() {
 	// Initialize Redis Consumer Group
 	err = infrastructure.InitOrderConsumerGroup(ctx, redisBrokerClient)
 	if err != nil {
-		log.Fatalf("Failed to initialize consumer group: %v", err)
+		logger.Log.Error("Failed to initialize consumer group", zap.Error(err))
+		os.Exit(1)
 	}
 
 	// Worker for consuming order messages
@@ -128,19 +135,21 @@ func main() {
 	go DeliveryFailedWorker.ListenForDeliveryFailed(ctx)
 
 	// register routes
-	r := gin.Default()
+	r := gin.New()
+	r.Use(sharedMiddleware.GinLogger())
 
-	api:= r.Group("/api/v1")
+	api := r.Group("/api/v1")
 	{
-		order:= api.Group("/order")
+		api.GET("/health", func(c *gin.Context) {
+			c.JSON(http.StatusOK, gin.H{"status": "ok"})
+		})
+
+		order := api.Group("/order")
 		order.Use(middleware.AuthMiddleware())
 		{
 			order.POST("", hdl.PostOrder)
 			order.GET("", hdl.GetOrders)
 			order.GET("/:id", hdl.GetOrderByID)
-			order.GET("/health", func(c *gin.Context) {
-				c.JSON(http.StatusOK, gin.H{"status": "okk"})
-			})
 		}
 	}
 
@@ -159,18 +168,19 @@ func main() {
 	}
 
 	go func() {
-		log.Println("Order Service starting on port " + cfg.ServerPort + "...")
+		logger.Log.Info("Order service starting", zap.String("port", cfg.ServerPort))
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("Failed to start server: %v", err)
+			logger.Log.Error("Failed to start HTTP server", zap.Error(err))
+			os.Exit(1)
 		}
 	}()
 
 	// Setup signal handling for graceful shutdown
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	
+
 	<-quit
-	log.Println("Shutting down servers...")
+	logger.Log.Info("Shutting down servers")
 
 	// Cancel context to stop worker
 	cancel()
@@ -181,6 +191,6 @@ func main() {
 
 	// Shutdown HTTP server
 	if err := srv.Shutdown(shutdownCtx); err != nil {
-		log.Printf("HTTP server forced to shutdown: %v", err)
+		logger.Log.Error("HTTP server forced to shutdown", zap.Error(err))
 	}
 }
