@@ -2,11 +2,12 @@ package worker
 
 import (
 	"context"
-	"log"
+	"libs/logger"
 	"order-service/internal/infrastructure"
 	"order-service/internal/service"
 
 	"github.com/redis/go-redis/v9"
+	"go.uber.org/zap"
 )
 
 type PaymentFailedWorker struct {
@@ -25,13 +26,10 @@ func (d *PaymentFailedWorker) ListenForPaymentFailed(ctx context.Context) {
 	d.w.ListenForEvents(ctx, func(ctx context.Context, msg redis.XMessage) error {
 		orderIDStr, ok := msg.Values["order_id"].(string)
 		if !ok {
+			logger.Log.Warn("dropping invalid payment failed message: missing order_id",
+				zap.Any("raw_values", msg.Values))
 			return nil
 		}
-		err := d.s.UpdateOrderStatus(ctx, orderIDStr, "CANCELLED")
-		if err != nil {
-			return err
-		}
-		log.Printf("Info: Order %s marked as CANCELLED due to payment failure.", orderIDStr)
-		return nil
+		return d.s.UpdateOrderStatus(ctx, orderIDStr, "CANCELLED")
 	})
 }

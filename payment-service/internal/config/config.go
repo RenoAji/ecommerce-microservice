@@ -13,6 +13,7 @@ type Config struct {
 	DBPort            string
 	ServerPort        string
 	GRPCPort          string
+	Environment       string
 	ConsulAddr        string
 	MidtransServerKey string
 	MidtransClientKey string
@@ -33,6 +34,7 @@ func LoadConfig() *Config {
 		DBPort:            getEnv("DB_PORT", "5432"),
 		ServerPort:        getEnv("SERVER_PORT", "8081"),
 		GRPCPort:          getEnv("GRPC_PORT", "50051"),
+		Environment:       getEnv("ENVIRONMENT", "development"),
 		ConsulAddr:        getEnv("CONSUL_ADDR", "consul:8500"),
 		MidtransServerKey: getEnv("MIDTRANS_SERVER_KEY", ""),
 		MidtransClientKey: getEnv("MIDTRANS_CLIENT_KEY", ""),

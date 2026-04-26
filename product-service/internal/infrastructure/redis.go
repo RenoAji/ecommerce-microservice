@@ -52,8 +52,9 @@ func MoveToDLQ(ctx context.Context, client *redis.Client, msg redis.XMessage, dl
 
 func NewRedisBroker(addr string, password string, db int) *redis.Client {
 	return redis.NewClient(&redis.Options{
-		Addr:     addr,
-		Password: password,
-		DB:       db,
+		Addr:        addr,
+		Password:    password,
+		DB:          db,
+		ReadTimeout: 10 * time.Second,
 	})
 }

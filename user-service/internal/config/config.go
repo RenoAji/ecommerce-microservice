@@ -6,26 +6,28 @@ import (
 )
 
 type Config struct {
-	DBHost         string
-	DBUser         string
-	DBPassword     string
-	DBName         string
-	DBPort         string
-	GRPCPort       string
-	ServerPort     string
-	ConsulAddr     string
+	DBHost      string
+	DBUser      string
+	DBPassword  string
+	DBName      string
+	DBPort      string
+	GRPCPort    string
+	ServerPort  string
+	Environment string
+	ConsulAddr  string
 }
 
 func LoadConfig() *Config {
 	return &Config{
-		DBHost:         getEnv("DB_HOST", "localhost"),
-		DBUser:         getEnv("DB_USER", "postgres"),
-		DBPassword:     getEnv("DB_PASSWORD", "password"),
-		DBName:         getEnv("DB_NAME", "orders_db"),
-		DBPort:         getEnv("DB_PORT", "5432"),
-		ServerPort:     getEnv("SERVER_PORT", "8081"),
-		GRPCPort:       getEnv("GRPC_PORT", "50051"),
-		ConsulAddr:    getEnv("CONSUL_ADDR", "consul:8500"),
+		DBHost:      getEnv("DB_HOST", "localhost"),
+		DBUser:      getEnv("DB_USER", "postgres"),
+		DBPassword:  getEnv("DB_PASSWORD", "password"),
+		DBName:      getEnv("DB_NAME", "orders_db"),
+		DBPort:      getEnv("DB_PORT", "5432"),
+		ServerPort:  getEnv("SERVER_PORT", "8081"),
+		GRPCPort:    getEnv("GRPC_PORT", "50051"),
+		Environment: getEnv("ENVIRONMENT", "development"),
+		ConsulAddr:  getEnv("CONSUL_ADDR", "consul:8500"),
 	}
 }
 

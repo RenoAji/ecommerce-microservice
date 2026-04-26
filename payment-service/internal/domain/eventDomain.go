@@ -1,6 +1,7 @@
 package domain
 
 type PaymentEvent struct {
-	OrderID uint `json:"order_id"`
-	Status string `json:"status" oneof:"success,failed"`
+	OrderID       uint   `json:"order_id"`
+	Status        string `json:"status" oneof:"success,failed"`
+	CorrelationID string `json:"correlation_id,omitempty"`
 }

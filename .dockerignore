@@ -36,3 +36,7 @@
 readme_img
 TESTING.md
 README.md
+
+libs/**
+!libs/**/*.mod
+!libs/**/*.sum

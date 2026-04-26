@@ -4,9 +4,11 @@ import (
 	"cart-service/internal/infrastructure"
 	"cart-service/internal/service"
 	"context"
-	"log"
+	"libs/logger"
+	"strconv"
 
 	"github.com/redis/go-redis/v9"
+	"go.uber.org/zap"
 )
 
 type PaymentFailedWorker struct {
@@ -23,15 +25,21 @@ func NewPaymentFailedWorker(brokerRedis *redis.Client, service *service.CartServ
 
 func (d *PaymentFailedWorker) ListenForPaymentFailed(ctx context.Context) {
 	d.w.ListenForEvents(ctx, func(ctx context.Context, msg redis.XMessage) error {
-		orderID, ok := msg.Values["order_id"].(uint)
+		orderIDStr, ok := msg.Values["order_id"].(string)
 		if !ok {
+			logger.Log.Warn("dropping invalid payment failed message: missing order_id",
+				zap.Any("raw_values", msg.Values),
+			)
 			return nil
 		}
-		err := d.s.ClearCart(ctx, orderID)
+		orderID, err := strconv.ParseUint(orderIDStr, 10, 64)
 		if err != nil {
-			return err
+			logger.Log.Warn("dropping invalid payment failed message: invalid order_id",
+				zap.String("orderID", orderIDStr),
+				zap.Any("raw_values", msg.Values),
+			)
+			return nil
 		}
-		log.Printf("Info: Cart cleared for Order ID %d due to payment failure.", orderID)
-		return nil
+		return d.s.ClearCart(ctx, uint(orderID))
 	})
 }

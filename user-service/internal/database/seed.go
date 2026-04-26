@@ -1,6 +1,7 @@
 package database
 
 import (
+	"context"
 	"log"
 	"user-service/internal/domain"
 	"user-service/internal/service"
@@ -26,7 +27,7 @@ func SeedAdmin(db *gorm.DB, svc *service.UserService) {
 		Role:     "admin",
 	}
 
-	if err := svc.RegisterUser(adminUser); err != nil {
+	if err := svc.RegisterUser(context.Background(), adminUser); err != nil {
 		log.Println("Failed to seed admin user:", err)
 		return
 	}

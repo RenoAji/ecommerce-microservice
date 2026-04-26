@@ -2,43 +2,98 @@ services:
   user-service:
     build:
       dockerfile: Dockerfile.dev
+    working_dir: /workspace/user-service
     volumes:
-      - ./user-service:/app
+      - ./user-service:/workspace/user-service
+      - ./cart-service:/workspace/cart-service:ro
+      - ./order-service:/workspace/order-service:ro
+      - ./product-service:/workspace/product-service:ro
+      - ./payment-service:/workspace/payment-service:ro
+      - ./delivery-service:/workspace/delivery-service:ro
+      - ./libs:/workspace/libs:ro
+      - ./vendor:/workspace/vendor:ro
+      - ./go.work:/workspace/go.work:ro
+      - ./go.work.sum:/workspace/go.work.sum:ro
 
   product-service:
     build:
       dockerfile: Dockerfile.dev
+    working_dir: /workspace/product-service
     volumes:
-      - ./product-service:/app
-      - ./libs:/libs:ro
+      - ./product-service:/workspace/product-service
+      - ./user-service:/workspace/user-service:ro
+      - ./cart-service:/workspace/cart-service:ro
+      - ./order-service:/workspace/order-service:ro
+      - ./payment-service:/workspace/payment-service:ro
+      - ./delivery-service:/workspace/delivery-service:ro
+      - ./libs:/workspace/libs:ro
+      - ./vendor:/workspace/vendor:ro
+      - ./go.work:/workspace/go.work:ro
+      - ./go.work.sum:/workspace/go.work.sum:ro
 
   cart-service:
     build:
       dockerfile: Dockerfile.dev
+    working_dir: /workspace/cart-service
     volumes:
-      - ./cart-service:/app
-      - ./libs:/libs:ro
+      - ./cart-service:/workspace/cart-service
+      - ./user-service:/workspace/user-service:ro
+      - ./order-service:/workspace/order-service:ro
+      - ./product-service:/workspace/product-service:ro
+      - ./payment-service:/workspace/payment-service:ro
+      - ./delivery-service:/workspace/delivery-service:ro
+      - ./libs:/workspace/libs:ro
+      - ./vendor:/workspace/vendor:ro
+      - ./go.work:/workspace/go.work:ro
+      - ./go.work.sum:/workspace/go.work.sum:ro
 
   order-service:
     build:
       dockerfile: Dockerfile.dev
+    working_dir: /workspace/order-service
     volumes:
-      - ./order-service:/app
-      - ./libs:/libs:ro
+      - ./order-service:/workspace/order-service
+      - ./user-service:/workspace/user-service:ro
+      - ./cart-service:/workspace/cart-service:ro
+      - ./product-service:/workspace/product-service:ro
+      - ./payment-service:/workspace/payment-service:ro
+      - ./delivery-service:/workspace/delivery-service:ro
+      - ./libs:/workspace/libs:ro
+      - ./vendor:/workspace/vendor:ro
+      - ./go.work:/workspace/go.work:ro
+      - ./go.work.sum:/workspace/go.work.sum:ro
 
   payment-service:
     build:
       dockerfile: Dockerfile.dev
+    working_dir: /workspace/payment-service
     volumes:
-      - ./payment-service:/app
-      - ./libs:/libs:ro
+      - ./payment-service:/workspace/payment-service
+      - ./user-service:/workspace/user-service:ro
+      - ./cart-service:/workspace/cart-service:ro
+      - ./order-service:/workspace/order-service:ro
+      - ./product-service:/workspace/product-service:ro
+      - ./delivery-service:/workspace/delivery-service:ro
+      - ./libs:/workspace/libs:ro
+      - ./vendor:/workspace/vendor:ro
+      - ./go.work:/workspace/go.work:ro
+      - ./go.work.sum:/workspace/go.work.sum:ro
 
   delivery-service:
     build:
       dockerfile: Dockerfile.dev
+    working_dir: /workspace/delivery-service
     volumes:
-      - ./delivery-service:/app
-      - ./libs:/libs:ro
+      - ./delivery-service:/workspace/delivery-service
+      - ./user-service:/workspace/user-service:ro
+      - ./cart-service:/workspace/cart-service:ro
+      - ./order-service:/workspace/order-service:ro
+      - ./product-service:/workspace/product-service:ro
+      - ./payment-service:/workspace/payment-service:ro
+      - ./libs:/workspace/libs:ro
+      - ./vendor:/workspace/vendor:ro
+      - ./go.work:/workspace/go.work:ro
+      - ./go.work.sum:/workspace/go.work.sum:ro
 
   user-db:
     ports:

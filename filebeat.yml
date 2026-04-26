@@ -1,0 +1,40 @@
+filebeat.inputs:
+  - type: filestream
+    enabled: true
+    id: api-gateway-input
+    paths:
+      - /var/log/nginx/*.log
+    fields:
+      service: api-gateway
+    fields_under_root: true
+
+  - type: filestream
+    enabled: true
+    id: services-input
+    paths:
+      - /var/lib/docker/containers/*/*.log
+    processors:
+      - add_docker_metadata: ~
+      - copy_fields:
+          fields:
+            - from: container.image.name
+              to: service
+          fail_on_error: false
+          ignore_missing: true
+      - drop_event:
+          when:
+            not:
+              contains:
+                container.image.name: "ecommerce"
+
+processors:
+  - add_docker_metadata: ~
+  - add_host_metadata: ~
+
+output.logstash:
+  hosts: ["logstash:5044"]
+
+# output.console:
+#   pretty: true
+
+logging.level: info

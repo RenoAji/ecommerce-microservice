@@ -42,7 +42,7 @@ func (h *CategoryHandler) Create(c *gin.Context) {
 	}
 
 	// Call the service layer
-	if err := h.productService.CreateCategory(&category); err != nil {
+	if err := h.productService.CreateCategory(c.Request.Context(), &category); err != nil {
 		// Check PostgreSQL unique constraint violation return 409
 		if strings.Contains(err.Error(), "duplicate key value") {
 			c.JSON(http.StatusConflict, domain.ErrorResponse{Error: "category already exists"})
