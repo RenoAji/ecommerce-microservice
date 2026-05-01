@@ -7,19 +7,21 @@ FROM golang:1.25-alpine AS builder
 RUN apk add --no-cache git
 
 # Set working directory
-WORKDIR /app
+WORKDIR /workspace/delivery-service
+
+# Copy shared libs first (for better caching)
+COPY --from=libs . /workspace/libs/
 
 # Copy dependency files first (for better caching)
 COPY go.mod go.sum ./
-COPY --from=libs ./**/*.mod ./**/*.sum ../libs/
-COPY --from=libs . ../libs
-COPY --from=vendor . ../vendor
+
+RUN go mod download
 
 # Copy the rest of the source code
 COPY . .
 
 # Build the app (pointing to your main.go location)
-RUN CGO_ENABLED=0 GOOS=linux go build -mod=vendor -o /app/main ./cmd/api/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -o /app/main ./cmd/api/main.go
 
 # Stage 2: Final lightweight image
 FROM alpine:latest
