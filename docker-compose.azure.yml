@@ -32,7 +32,7 @@ services:
 
   consul:
     restart: always
-    command: ["agent", "-dev", "-log-level=warn", "-client=0.0.0.0"]
+    command: [ "agent", "-dev", "-log-level=warn", "-client=0.0.0.0" ]
 
   # --- ORDER SERVICE ---
   order-service:
@@ -59,4 +59,19 @@ services:
 
   delivery-db:
     ports: []
+    restart: always
+
+  # ELK STACK
+  elasticsearch:
+    restart: always
+
+  logstash:
+    restart: always
+
+  kibana:
+    restart: always
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+
+  filebeat:
     restart: always

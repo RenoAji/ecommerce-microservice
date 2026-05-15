@@ -19,14 +19,14 @@ This project is for learning purpose inspired from https://roadmap.sh/projects/s
   - Order Service:
     - Get cart details from Cart Service
     - Get product details from Product Service
-    - Update product stock in Product Service
+    - Get payment URL from Payment Service
   - Cart Service:
     - Get product details from Product Service
       ![alt text](<readme_img/microservice_ecomm_grpc%20(1).png>)
 
 - **Redis Streams**: Messaging between services:
   - OrderCreated event from Order Service consumed by:
-    - Payment Service to initiate payment
+    - Product Service to reserve stock
   - StockReserved event from Product Service consumed by:
     - Order Service to confirm order
   - StockInsufficient event from Product Service consumed by:
